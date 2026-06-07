@@ -4,7 +4,6 @@ const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Validate input
         if (!email || !password) {
             return res.status(400).json({
                 error: 'Bad Request',
@@ -22,9 +21,19 @@ const login = async (req, res) => {
         });
 
     } catch (error) {
-        return res.status(401).json({
-            error: 'Unauthorized',
-            message: error.message
+        const isAuthFailure = error.message === 'Invalid email or password';
+        const isConfigError = error.message === 'AUTH_CONFIG_ERROR';
+
+        if (isConfigError) {
+            return res.status(500).json({
+                error: 'Internal Server Error',
+                message: 'Authentication service is not configured'
+            });
+        }
+
+        return res.status(isAuthFailure ? 401 : 500).json({
+            error: isAuthFailure ? 'Unauthorized' : 'Internal Server Error',
+            message: isAuthFailure ? 'Invalid email or password' : 'An unexpected error occurred'
         });
     }
 };

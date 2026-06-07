@@ -3,7 +3,13 @@ const { getUserById } = require('../services/authService');
 
 const authenticate = async (req, res, next) => {
     try {
-        // Get token from header
+        if (!process.env.JWT_SECRET) {
+            return res.status(500).json({
+                error: 'Internal Server Error',
+                message: 'Authentication service is not configured'
+            });
+        }
+
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({
@@ -12,11 +18,9 @@ const authenticate = async (req, res, next) => {
             });
         }
 
-        // Verify token
         const token = authHeader.split(' ')[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        // Get user from database
         const user = await getUserById(decoded.userId);
         if (!user) {
             return res.status(401).json({
@@ -25,8 +29,8 @@ const authenticate = async (req, res, next) => {
             });
         }
 
-        // Attach user to request
-        req.user = user;
+        const { password_hash, ...safeUser } = user;
+        req.user = safeUser;
         next();
 
     } catch (error) {
@@ -39,6 +43,13 @@ const authenticate = async (req, res, next) => {
 
 const authorize = (...roles) => {
     return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({
+                error: 'Unauthorized',
+                message: 'Authentication required'
+            });
+        }
+
         if (!roles.includes(req.user.role_name)) {
             return res.status(403).json({
                 error: 'Forbidden',
