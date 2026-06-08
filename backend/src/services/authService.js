@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { findUserByEmail, findUserById, updatePassword } = require('../repositories/authRepository');
+const { findUserByEmail, findUserById, findUserByIdWithPassword, updatePassword } = require('../repositories/authRepository');
 
 const loginUser = async (email, password) => {
     if (!process.env.JWT_SECRET) {
@@ -44,8 +44,8 @@ const getUserById = async (userId) => {
 };
 
 const changePassword = async (userId, currentPassword, newPassword) => {
-    // Get user
-    const user = await findUserById(userId);
+    // Use findUserByIdWithPassword to get password_hash
+    const user = await findUserByIdWithPassword(userId);
     if (!user) {
         throw new Error('User not found');
     }
