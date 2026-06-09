@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { findUserByEmail, findUserById } = require('../repositories/authRepository');
+const { findUserByEmail, findUserById, findUserByIdWithPassword, updatePassword } = require('../repositories/authRepository');
 
 const loginUser = async (email, password) => {
     if (!process.env.JWT_SECRET) {
@@ -43,4 +43,34 @@ const getUserById = async (userId) => {
     return user || null;
 };
 
-module.exports = { loginUser, getUserById };
+const changePassword = async (userId, currentPassword, newPassword) => {
+    // Use findUserByIdWithPassword to get password_hash
+    const user = await findUserByIdWithPassword(userId);
+    if (!user) {
+        throw new Error('User not found');
+    }
+
+    // Verify current password
+    const isValidPassword = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isValidPassword) {
+        throw new Error('Current password is incorrect');
+    }
+
+    // Validate new password
+    if (newPassword.length < 8) {
+        throw new Error('New password must be at least 8 characters');
+    }
+
+    if (currentPassword === newPassword) {
+        throw new Error('New password must be different from current password');
+    }
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    const updatedUser = await updatePassword(userId, passwordHash);
+    return updatedUser;
+};
+
+module.exports = { loginUser, getUserById, changePassword };
