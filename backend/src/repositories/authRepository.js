@@ -19,4 +19,25 @@ const findUserById = async (userId) => {
     return result.rows[0];
 };
 
-module.exports = { findUserByEmail, findUserById };
+const findUserByIdWithPassword = async (userId) => {
+    const result = await pool.query(
+        'SELECT * FROM users WHERE user_id = $1',
+        [userId]
+    );
+    return result.rows[0];
+};
+
+const updatePassword = async (userId, passwordHash) => {
+    const result = await pool.query(
+        `UPDATE users 
+         SET password_hash = $1, 
+             must_change_password = FALSE,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE user_id = $2
+         RETURNING user_id, full_name, email, role_id, must_change_password`,
+        [passwordHash, userId]
+    );
+    return result.rows[0];
+};
+
+module.exports = { findUserByEmail, findUserById, findUserByIdWithPassword, updatePassword };
