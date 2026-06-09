@@ -30,7 +30,7 @@ const authenticate = async (req, res, next) => {
         }
 
         const { password_hash, ...safeUser } = user;
-        req.user = safeUser;
+        req.user = safeUser;   // Attach user info to request object for downstream use
         next();
 
     } catch (error) {
