@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const xss = require('xss-clean');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
@@ -29,6 +30,7 @@ app.use(cors({
     credentials: true,
 }));
 
+app.use(xss());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
