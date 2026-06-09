@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const xss = require('xss-clean');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
@@ -30,7 +29,6 @@ app.use(cors({
     credentials: true,
 }));
 
-app.use(xss());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -39,7 +37,7 @@ app.use('/api/auth', authRoutes);
 
 // Test route
 app.get('/', (req, res) => {
-    res.json({ message: 'Task Management System API is running' });
+    res.json({ message: 'Task Management System API is running :-)' });
 });
 
 // 404 handler (after all routes)
