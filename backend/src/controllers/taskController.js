@@ -13,7 +13,7 @@ const createTask = async (req, res) => {
 
     const {
       projectId,
-      title,
+      title, 
       description,
       priority,
       dueDate
