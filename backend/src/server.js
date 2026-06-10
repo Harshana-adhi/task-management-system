@@ -35,6 +35,12 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/auth', authRoutes);
 
+const taskRoutes =
+require('./routes/taskRoutes');
+
+app.use('/api/tasks',taskRoutes);
+
+
 // Test route
 app.get('/', (req, res) => {
     res.json({ message: 'Task Management System API is running :-)' });
