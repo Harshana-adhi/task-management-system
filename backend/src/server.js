@@ -4,6 +4,8 @@ const helmet = require('helmet');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
+const taskRoutes = require('./routes/taskRoutes');
+const userRoutes = require('./routes/userRoutes');
 const { errorMiddleware, notFoundMiddleware } = require('./middlewares/errorMiddleware');
 
 const app = express();
@@ -34,16 +36,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
-
-const taskRoutes =
-require('./routes/taskRoutes');
-
-app.use('/api/tasks',taskRoutes);
-
+app.use('/api/tasks', taskRoutes);
+app.use('/api/users', userRoutes);
 
 // Test route
 app.get('/', (req, res) => {
-    res.json({ message: 'Task Management System API is running :-)' });
+    res.json({ message: 'Task Management System API is running' });
 });
 
 // 404 handler (after all routes)
