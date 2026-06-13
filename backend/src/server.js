@@ -9,6 +9,7 @@ const taskRoutes = require('./routes/taskRoutes');
 const userRoutes = require('./routes/userRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const attachmentRoutes = require('./routes/attachmentRoutes');
+const projectRoutes = require('./routes/projectRoutes');
 const { errorMiddleware, notFoundMiddleware } = require('./middlewares/errorMiddleware');
 
 const app = express();
@@ -46,6 +47,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/attachments', attachmentRoutes);
+app.use('/api/projects', projectRoutes);
 
 // Test route
 app.get('/', (req, res) => {
