@@ -1,0 +1,80 @@
+const notificationRepository = require('../repositories/notificationRepository');
+
+const createNotification = async ({ userId, title, message }) => {
+    return await notificationRepository.createNotification(userId, title, message);
+};
+
+const getUnreadNotifications = async (userId) => {
+    return await notificationRepository.getUnreadNotifications(userId);
+};
+
+const getAllNotifications = async (userId) => {
+    return await notificationRepository.getAllNotifications(userId);
+};
+
+const markAsRead = async (notificationId, userId) => {
+    const notification = await notificationRepository.markAsRead(notificationId, userId);
+    if (!notification) throw new Error('Notification not found');
+    return notification;
+};
+
+const markAllAsRead = async (userId) => {
+    return await notificationRepository.markAllAsRead(userId);
+};
+
+// Notification trigger helpers
+const notifyTaskAssigned = async ({ assignedUserId, taskTitle, projectName, assignedByName }) => {
+    return createNotification({
+        userId: assignedUserId,
+        title: 'New Task Assigned',
+        message: `You have been assigned the task "${taskTitle}" in project "${projectName}" by ${assignedByName}.`
+    });
+};
+
+const notifyStatusChange = async ({ projectCreatorId, taskTitle, newStatus, changedByName }) => {
+    return createNotification({
+        userId: projectCreatorId,
+        title: 'Task Status Updated',
+        message: `Task "${taskTitle}" status changed to "${newStatus}" by ${changedByName}.`
+    });
+};
+
+const notifyComment = async ({ taskOwnerId, taskTitle, commenterName, projectName }) => {
+    return createNotification({
+        userId: taskOwnerId,
+        title: 'New Comment on Task',
+        message: `${commenterName} commented on task "${taskTitle}" in project "${projectName}".`
+    });
+};
+
+const notifyDeadlineApproaching = async ({ assignedUserId, taskTitle, dueDate }) => {
+    const dueDateFormatted = new Date(dueDate).toLocaleDateString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric'
+    });
+    return createNotification({
+        userId: assignedUserId,
+        title: 'Deadline Approaching',
+        message: `Task "${taskTitle}" is due on ${dueDateFormatted}. Please ensure timely completion.`
+    });
+};
+
+const notifyAdminUpdate = async ({ userId, updateMessage }) => {
+    return createNotification({
+        userId,
+        title: 'Administrative Update',
+        message: updateMessage
+    });
+};
+
+module.exports = {
+    createNotification,
+    getUnreadNotifications,
+    getAllNotifications,
+    markAsRead,
+    markAllAsRead,
+    notifyTaskAssigned,
+    notifyStatusChange,
+    notifyComment,
+    notifyDeadlineApproaching,
+    notifyAdminUpdate
+};
