@@ -21,10 +21,11 @@ const uploadAttachment = async (req, res) => {
         }
 
         const fileName = req.file.originalname;
-        const fileUrl = `/uploads/${req.file.filename}`;
+        const fileBuffer = req.file.buffer;
+        const mimeType = req.file.mimetype;
 
         const attachment = await attachmentService.uploadAttachment(
-            task_id, uploadedBy, fileName, fileUrl, userRole
+            task_id, uploadedBy, fileName, fileBuffer, mimeType, userRole
         );
 
         return res.status(201).json({
@@ -33,6 +34,7 @@ const uploadAttachment = async (req, res) => {
         });
 
     } catch (error) {
+        console.error('Upload error:', error);
         const isNotFound = error.message === 'Task not found';
         const isAccessDenied = error.message === 'Access denied';
         const status = isNotFound ? 404 : isAccessDenied ? 403 : 500;
@@ -42,7 +44,6 @@ const uploadAttachment = async (req, res) => {
         });
     }
 };
-
 const getAttachments = async (req, res) => {
     try {
         const { taskId } = req.params;
