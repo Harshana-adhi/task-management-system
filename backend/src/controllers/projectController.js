@@ -20,16 +20,20 @@ const createProject = async (req, res) => {
         });
 
     } catch (error) {
-        return res.status(500).json({
-            error: 'Internal Server Error',
-            message: 'Failed to create project'
+        const isConflict = error.message === 'You already have a project with this name';
+        return res.status(isConflict ? 409 : 500).json({
+            error: isConflict ? 'Conflict' : 'Internal Server Error',
+            message: error.message
         });
     }
 };
 
 const getAllProjects = async (req, res) => {
     try {
-        const projects = await projectService.getAllProjects();
+        const userId = req.user.user_id;
+        const userRole = req.user.role_name;
+
+        const projects = await projectService.getAllProjects(userId, userRole);
         return res.status(200).json(projects);
 
     } catch (error) {
@@ -43,7 +47,10 @@ const getAllProjects = async (req, res) => {
 const getProjectById = async (req, res) => {
     try {
         const { projectId } = req.params;
-        const project = await projectService.getProjectById(projectId);
+        const userId = req.user.user_id;
+        const userRole = req.user.role_name;
+
+        const project = await projectService.getProjectById(projectId, userId, userRole);
         return res.status(200).json(project);
 
     } catch (error) {
@@ -81,9 +88,10 @@ const updateProject = async (req, res) => {
     } catch (error) {
         const isNotFound = error.message === 'Project not found';
         const isForbidden = error.message === 'You can only update projects you created';
-        const status = isNotFound ? 404 : isForbidden ? 403 : 500;
+        const isConflict = error.message === 'You already have a project with this name';
+        const status = isNotFound ? 404 : isForbidden ? 403 : isConflict ? 409 : 500;
         return res.status(status).json({
-            error: isNotFound ? 'Not Found' : isForbidden ? 'Forbidden' : 'Internal Server Error',
+            error: isNotFound ? 'Not Found' : isForbidden ? 'Forbidden' : isConflict ? 'Conflict' : 'Internal Server Error',
             message: error.message
         });
     }
@@ -150,7 +158,10 @@ const removeMember = async (req, res) => {
 const getProjectMembers = async (req, res) => {
     try {
         const { projectId } = req.params;
-        const members = await projectService.getProjectMembers(projectId);
+        const userId = req.user.user_id;
+        const userRole = req.user.role_name;
+
+        const members = await projectService.getProjectMembers(projectId, userId, userRole);
 
         return res.status(200).json({
             projectId,
@@ -158,7 +169,7 @@ const getProjectMembers = async (req, res) => {
         });
 
     } catch (error) {
-        const isNotFound = error.message === 'Project not found';
+        const isNotFound = error.message === 'Project not found or access denied';
         return res.status(isNotFound ? 404 : 500).json({
             error: isNotFound ? 'Not Found' : 'Internal Server Error',
             message: error.message

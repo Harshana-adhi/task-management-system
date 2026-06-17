@@ -22,14 +22,20 @@ const getAttachmentsByTask = async (taskId) => {
     return result.rows;
 };
 
-const deleteAttachment = async (attachmentId, uploadedBy) => {
+const getAttachmentById = async (attachmentId) => {
     const result = await pool.query(
-        `DELETE FROM attachments
-         WHERE attachment_id = $1 AND uploaded_by = $2
-         RETURNING *`,
-        [attachmentId, uploadedBy]
+        `SELECT * FROM attachments WHERE attachment_id = $1`,
+        [attachmentId]
     );
     return result.rows[0];
 };
 
-module.exports = { createAttachment, getAttachmentsByTask, deleteAttachment };
+const deleteAttachment = async (attachmentId) => {
+    const result = await pool.query(
+        `DELETE FROM attachments WHERE attachment_id = $1 RETURNING *`,
+        [attachmentId]
+    );
+    return result.rows[0];
+};
+
+module.exports = { createAttachment, getAttachmentsByTask, getAttachmentById, deleteAttachment };

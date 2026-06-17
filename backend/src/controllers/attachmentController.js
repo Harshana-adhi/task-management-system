@@ -4,6 +4,7 @@ const uploadAttachment = async (req, res) => {
     try {
         const { task_id } = req.body;
         const uploadedBy = req.user.user_id;
+        const userRole = req.user.role_name;
 
         if (!task_id) {
             return res.status(400).json({
@@ -20,10 +21,10 @@ const uploadAttachment = async (req, res) => {
         }
 
         const fileName = req.file.originalname;
-        const fileUrl = req.file.path;
+        const fileUrl = `/uploads/${req.file.filename}`;
 
         const attachment = await attachmentService.uploadAttachment(
-            task_id, uploadedBy, fileName, fileUrl
+            task_id, uploadedBy, fileName, fileUrl, userRole
         );
 
         return res.status(201).json({
@@ -32,9 +33,12 @@ const uploadAttachment = async (req, res) => {
         });
 
     } catch (error) {
-        return res.status(500).json({
-            error: 'Internal Server Error',
-            message: 'Failed to upload attachment'
+        const isNotFound = error.message === 'Task not found';
+        const isAccessDenied = error.message === 'Access denied';
+        const status = isNotFound ? 404 : isAccessDenied ? 403 : 500;
+        return res.status(status).json({
+            error: isNotFound ? 'Not Found' : isAccessDenied ? 'Forbidden' : 'Internal Server Error',
+            message: isNotFound || isAccessDenied ? error.message : 'Failed to upload attachment'
         });
     }
 };
@@ -42,14 +46,19 @@ const uploadAttachment = async (req, res) => {
 const getAttachments = async (req, res) => {
     try {
         const { taskId } = req.params;
-        const attachments = await attachmentService.getTaskAttachments(taskId);
+        const userId = req.user.user_id;
+        const userRole = req.user.role_name;
 
+        const attachments = await attachmentService.getTaskAttachments(taskId, userId, userRole);
         return res.status(200).json(attachments);
 
     } catch (error) {
-        return res.status(500).json({
-            error: 'Internal Server Error',
-            message: 'Failed to fetch attachments'
+        const isNotFound = error.message === 'Task not found';
+        const isAccessDenied = error.message === 'Access denied';
+        const status = isNotFound ? 404 : isAccessDenied ? 403 : 500;
+        return res.status(status).json({
+            error: isNotFound ? 'Not Found' : isAccessDenied ? 'Forbidden' : 'Internal Server Error',
+            message: isNotFound || isAccessDenied ? error.message : 'Failed to fetch attachments'
         });
     }
 };
@@ -57,22 +66,24 @@ const getAttachments = async (req, res) => {
 const deleteAttachment = async (req, res) => {
     try {
         const { attachmentId } = req.params;
-        const uploadedBy = req.user.user_id;
+        const userId = req.user.user_id;
+        const userRole = req.user.role_name;
 
-        await attachmentService.deleteAttachment(attachmentId, uploadedBy);
+        await attachmentService.deleteAttachment(attachmentId, userId, userRole);
 
         return res.status(200).json({
             message: 'Attachment deleted successfully'
         });
 
     } catch (error) {
-        const isNotFound = error.message === 'Attachment not found or unauthorized';
-        return res.status(isNotFound ? 404 : 500).json({
-            error: isNotFound ? 'Not Found' : 'Internal Server Error',
+        const isNotFound = error.message === 'Attachment not found';
+        const isForbidden = error.message === 'You can only delete your own attachments';
+        const status = isNotFound ? 404 : isForbidden ? 403 : 500;
+        return res.status(status).json({
+            error: isNotFound ? 'Not Found' : isForbidden ? 'Forbidden' : 'Internal Server Error',
             message: error.message
         });
     }
 };
 
 module.exports = { uploadAttachment, getAttachments, deleteAttachment };
-

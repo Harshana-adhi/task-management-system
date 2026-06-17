@@ -22,14 +22,20 @@ const getCommentsByTask = async (taskId) => {
     return result.rows;
 };
 
-const deleteComment = async (commentId, userId) => {
+const getCommentById = async (commentId) => {
     const result = await pool.query(
-        `DELETE FROM comments
-         WHERE comment_id = $1 AND user_id = $2
-         RETURNING *`,
-        [commentId, userId]
+        `SELECT * FROM comments WHERE comment_id = $1`,
+        [commentId]
     );
     return result.rows[0];
 };
 
-module.exports = { createComment, getCommentsByTask, deleteComment };
+const deleteComment = async (commentId) => {
+    const result = await pool.query(
+        `DELETE FROM comments WHERE comment_id = $1 RETURNING *`,
+        [commentId]
+    );
+    return result.rows[0];
+};
+
+module.exports = { createComment, getCommentsByTask, getCommentById, deleteComment };

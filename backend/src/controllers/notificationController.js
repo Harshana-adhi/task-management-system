@@ -1,6 +1,8 @@
 const notificationService = require('../services/notificationService');
 const { sendNotification } = require('../sockets/notificationSocket');
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const getMyNotifications = async (req, res) => {
     try {
         const userId = req.user.user_id;
@@ -52,14 +54,57 @@ const markAllAsRead = async (req, res) => {
     }
 };
 
+// Send to one specific user OR broadcast to all users
 const adminBroadcast = async (req, res) => {
     try {
-        const { userId, message } = req.body;
+        const { userId, message, broadcastToAll } = req.body;
 
-        if (!userId || !message) {
+        if (!message || message.trim() === '') {
             return res.status(400).json({
                 error: 'Validation Error',
-                message: 'userId and message are required'
+                message: 'Message is required'
+            });
+        }
+
+        // Option 1 — Broadcast to ALL active users
+        if (broadcastToAll === true) {
+            const allUserIds = await notificationService.getAllActiveUserIds();
+
+            for (const targetUserId of allUserIds) {
+                await sendNotification({
+                    userId: targetUserId,
+                    title: 'Administrative Update',
+                    message
+                });
+            }
+
+            return res.status(200).json({
+                message: `Administrative notification sent to ${allUserIds.length} user(s)`
+            });
+        }
+
+        // Option 2 — Send to one specific user
+        if (!userId) {
+            return res.status(400).json({
+                error: 'Validation Error',
+                message: 'userId is required when broadcastToAll is false'
+            });
+        }
+
+        // Validate UUID format before querying DB
+        if (!UUID_REGEX.test(userId)) {
+            return res.status(400).json({
+                error: 'Validation Error',
+                message: 'userId must be a valid UUID'
+            });
+        }
+
+        // Check user exists
+        const userExists = await notificationService.checkUserExists(userId);
+        if (!userExists) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'User not found or inactive'
             });
         }
 
@@ -74,7 +119,8 @@ const adminBroadcast = async (req, res) => {
         });
 
     } catch (error) {
-        return res.status(500).json({
+    console.error('adminBroadcast error:', error);
+    return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to send notification'
         });

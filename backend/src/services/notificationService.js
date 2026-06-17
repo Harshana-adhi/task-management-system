@@ -22,6 +22,14 @@ const markAllAsRead = async (userId) => {
     return await notificationRepository.markAllAsRead(userId);
 };
 
+const getAllActiveUserIds = async () => {
+    return await notificationRepository.getAllActiveUserIds();
+};
+
+const checkUserExists = async (userId) => {
+    return await notificationRepository.checkUserExists(userId);
+};
+
 // Notification trigger helpers
 const notifyTaskAssigned = async ({ assignedUserId, taskTitle, projectName, assignedByName }) => {
     return createNotification({
@@ -72,6 +80,8 @@ module.exports = {
     getAllNotifications,
     markAsRead,
     markAllAsRead,
+    getAllActiveUserIds,
+    checkUserExists,
     notifyTaskAssigned,
     notifyStatusChange,
     notifyComment,

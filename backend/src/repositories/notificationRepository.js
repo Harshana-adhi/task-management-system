@@ -51,10 +51,27 @@ const markAllAsRead = async (userId) => {
     );
 };
 
+const getAllActiveUserIds = async () => {
+    const result = await pool.query(
+        `SELECT user_id FROM users WHERE is_active = TRUE`
+    );
+    return result.rows.map(row => row.user_id);
+};
+
+const checkUserExists = async (userId) => {
+    const result = await pool.query(
+        `SELECT user_id FROM users WHERE user_id = $1 AND is_active = TRUE`,
+        [userId]
+    );
+    return result.rows.length > 0;
+};
+
 module.exports = {
     createNotification,
     getUnreadNotifications,
     getAllNotifications,
     markAsRead,
-    markAllAsRead
+    markAllAsRead,
+    getAllActiveUserIds,
+    checkUserExists
 };
