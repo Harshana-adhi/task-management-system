@@ -5,6 +5,7 @@ import Login from './pages/Login/Login'
 import ChangePassword from './pages/ChangePassword/ChangePassword'
 import Profile from './pages/Profile/Profile'
 import Dashboard from './pages/Dashboard/Dashboard'
+import Users from './pages/Admin/Users/Users'
 import NotFound from './pages/NotFound/NotFound'
 
 function App() {
@@ -22,7 +23,11 @@ function App() {
           <Route element={<AppLayout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
-            {/* /projects, /tasks, /admin/users are added in their own phases */}
+
+            <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
+              <Route path="/admin/users" element={<Users />} />
+            </Route>
+            {/* /projects, /tasks are added in their own phases */}
           </Route>
         </Route>
 
