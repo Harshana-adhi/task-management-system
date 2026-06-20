@@ -14,8 +14,32 @@ export default function Modal({ open, onClose, title, children, footer, size = '
     if (!open) return
 
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose?.()
+      if (e.key === 'Escape') {
+        onClose?.()
+        return
+      }
+
+      if (e.key !== 'Tab') return
+
+      // Cycle Tab/Shift+Tab between the first and last focusable element
+      // inside the dialog, so focus can't escape to the page behind it.
+      const focusableSelector =
+        'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+      const focusable = dialogRef.current?.querySelectorAll(focusableSelector)
+      if (!focusable || focusable.length === 0) return
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
     }
+
     document.addEventListener('keydown', handleKeyDown)
     dialogRef.current?.focus()
 

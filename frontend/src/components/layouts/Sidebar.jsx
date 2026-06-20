@@ -40,7 +40,7 @@ function NavItem({ to, label, icon: Icon, onClick }) {
 
 function SidebarContent({ onNavigate }) {
   const roleName = useAuthStore((s) => s.user?.role_name)
-  const visibleItems = NAV_ITEMS.filter((item) => !roleName || item.roles.includes(roleName))
+  const visibleItems = NAV_ITEMS.filter((item) => roleName && item.roles.includes(roleName))
 
   return (
     <div className="flex h-full flex-col">

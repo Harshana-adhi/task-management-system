@@ -21,7 +21,7 @@ export const useAuthStore = create(
 
       setSession: (user, token) => set({ user, token, isAuthenticated: true }),
       updateUser: (partialUser) =>
-        set((state) => ({ user: { ...state.user, ...partialUser } })),
+        set((state) => ({ user: { ...(state.user ?? {}), ...partialUser } })),
       logout: () => set({ user: null, token: null, isAuthenticated: false }),
     }),
     { name: 'auth-storage' }
