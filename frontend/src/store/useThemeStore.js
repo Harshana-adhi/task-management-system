@@ -15,7 +15,10 @@ const applyThemeClass = (theme) => {
 export const useThemeStore = create(
   persist(
     (set, get) => ({
-      theme: 'light',
+      // Read the class index.html's inline script already applied
+      // pre-paint (from storage or OS preference), so the store's
+      // initial state matches the DOM instead of always starting 'light'.
+      theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
       toggleTheme: () => {
         const next = get().theme === 'dark' ? 'light' : 'dark'
         applyThemeClass(next)
