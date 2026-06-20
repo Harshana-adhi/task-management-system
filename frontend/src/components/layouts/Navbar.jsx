@@ -1,5 +1,5 @@
 import { Menu, Moon, Sun, Bell, Search, LogOut } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useUIStore } from '../../store/useUIStore'
@@ -25,7 +25,7 @@ export default function Navbar() {
 
   const handleLogout = () => {
     logout()
-    navigate('/login')
+    navigate('/login', { replace: true })
   }
 
   return (
@@ -66,24 +66,26 @@ export default function Navbar() {
           )}
         </button>
 
-        <div className="ml-1 flex items-center gap-2 border-l border-slate-200 pl-3 dark:border-slate-800">
+        <Link
+          to="/profile"
+          className="ml-1 flex items-center gap-2 rounded-lg border-l border-slate-200 pl-3 hover:opacity-80 dark:border-slate-800"
+        >
           <div className="flex size-8 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
             {user ? initials(user.full_name) : '??'}
           </div>
           <span className="hidden text-sm font-medium text-slate-700 dark:text-slate-200 lg:block">
             {user?.full_name ?? 'Guest'}
           </span>
-          {import.meta.env.DEV && (
-            <button
-              onClick={handleLogout}
-              aria-label="Log out (dev preview)"
-              title="Log out (dev preview)"
-              className="rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
-            >
-              <LogOut className="size-4" />
-            </button>
-          )}
-        </div>
+        </Link>
+
+        <button
+          onClick={handleLogout}
+          aria-label="Log out"
+          title="Log out"
+          className="rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+        >
+          <LogOut className="size-4" />
+        </button>
       </div>
     </header>
   )

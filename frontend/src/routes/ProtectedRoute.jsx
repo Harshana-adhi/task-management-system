@@ -1,24 +1,22 @@
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/useAuthStore'
-import { PageLoader } from '../components/common/Loader'
 
 /**
- * Scaffold for Phase 1 — just checks authentication. Phase 2 extends this
- * with the mandatory-change-password redirect, and a role-based variant
- * (e.g. <ProtectedRoute allowedRoles={['Admin']} />) guards Admin-only routes.
+ * Guards authenticated routes and enforces the mandatory password change.
+ * A role-based variant (e.g. <ProtectedRoute allowedRoles={['Admin']} />)
+ * is added when Admin-only routes are built in Phase 3.
  */
 export default function ProtectedRoute() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-  const hasHydrated = useAuthStore((s) => s.hasHydrated)
-
-  // Wait for the persisted session to load before deciding — otherwise
-  // a logged-in user gets bounced to /login on every refresh.
-  if (!hasHydrated) {
-    return <PageLoader label="Loading session…" />
-  }
+  const mustChangePassword = useAuthStore((s) => s.user?.must_change_password)
+  const location = useLocation()
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />
+  }
+
+  if (mustChangePassword && location.pathname !== '/change-password') {
+    return <Navigate to="/change-password" replace />
   }
 
   return <Outlet />
