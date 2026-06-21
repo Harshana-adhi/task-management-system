@@ -30,4 +30,13 @@ router.delete('/:projectId/members/:userId', authenticate, authorize('Admin', 'P
 // View members
 router.get('/:projectId/members', authenticate, authorize('Admin', 'Project Manager', 'Collaborator'), projectController.getProjectMembers);
 
+// Archive project (Admin + Project Manager, own projects only for PM) — reversible
+router.patch('/:projectId/archive', authenticate, authorize('Admin', 'Project Manager'), projectController.archiveProject);
+
+// Unarchive project (Admin + Project Manager, own projects only for PM)
+router.patch('/:projectId/unarchive', authenticate, authorize('Admin', 'Project Manager'), projectController.unarchiveProject);
+
+// Permanently delete project (Admin only) — irreversible, cascades to tasks/comments/attachments
+router.delete('/:projectId', authenticate, authorize('Admin'), projectController.deleteProject);
+
 module.exports = router;

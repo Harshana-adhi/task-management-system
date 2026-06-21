@@ -57,6 +57,46 @@ const getProjectMembers = async (projectId, userId, userRole) => {
     return members;
 };
 
+const archiveProject = async (projectId, requesterId, userRole) => {
+    const project = await projectRepository.getProjectByIdInternal(projectId);
+    if (!project) throw new Error('Project not found');
+
+    // Project Manager can only archive their own projects; Admin can archive any.
+    if (userRole === 'Project Manager' && project.created_by !== requesterId) {
+        throw new Error('You can only archive projects you created');
+    }
+    if (project.is_archived) throw new Error('Project is already archived');
+
+    return await projectRepository.setArchived(projectId, true);
+};
+
+const unarchiveProject = async (projectId, requesterId, userRole) => {
+    const project = await projectRepository.getProjectByIdInternal(projectId);
+    if (!project) throw new Error('Project not found');
+
+    if (userRole === 'Project Manager' && project.created_by !== requesterId) {
+        throw new Error('You can only unarchive projects you created');
+    }
+    if (!project.is_archived) throw new Error('Project is not archived');
+
+    return await projectRepository.setArchived(projectId, false);
+};
+
+const deleteProject = async (projectId, userRole) => {
+    // Hard delete is Admin-only, by design — it permanently removes the
+    // project and (via ON DELETE CASCADE) every task, comment, and
+    // attachment tied to it. Project Managers get archive/unarchive
+    // instead, which is reversible.
+    if (userRole !== 'Admin') {
+        throw new Error('Only an Administrator can permanently delete a project');
+    }
+
+    const project = await projectRepository.getProjectByIdInternal(projectId);
+    if (!project) throw new Error('Project not found');
+
+    return await projectRepository.deleteProject(projectId);
+};
+
 module.exports = {
     createProject,
     getAllProjects,
@@ -64,5 +104,8 @@ module.exports = {
     updateProject,
     addMember,
     removeMember,
-    getProjectMembers
+    getProjectMembers,
+    archiveProject,
+    unarchiveProject,
+    deleteProject
 };

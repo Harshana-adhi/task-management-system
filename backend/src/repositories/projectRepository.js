@@ -30,6 +30,7 @@ const getAllProjects = async (userId, userRole) => {
                 p.project_id,
                 p.project_name,
                 p.description,
+                p.is_archived,
                 p.created_at,
                 p.updated_at,
                 p.created_by,
@@ -49,6 +50,7 @@ const getAllProjects = async (userId, userRole) => {
                 p.project_id,
                 p.project_name,
                 p.description,
+                p.is_archived,
                 p.created_at,
                 p.updated_at,
                 p.created_by,
@@ -70,6 +72,7 @@ const getAllProjects = async (userId, userRole) => {
                 p.project_id,
                 p.project_name,
                 p.description,
+                p.is_archived,
                 p.created_at,
                 p.updated_at,
                 p.created_by,
@@ -220,6 +223,27 @@ const getProjectByIdInternal = async (projectId) => {
     return result.rows[0] || null;
 };
 
+const deleteProject = async (projectId) => {
+    // ON DELETE CASCADE on tasks/project_members takes care of cleaning up
+    // dependent rows (tasks, task_assignments, comments, attachments).
+    const result = await pool.query(
+        `DELETE FROM projects WHERE project_id = $1 RETURNING *`,
+        [projectId]
+    );
+    return result.rows[0];
+};
+
+const setArchived = async (projectId, isArchived) => {
+    const result = await pool.query(
+        `UPDATE projects
+         SET is_archived = $1, updated_at = CURRENT_TIMESTAMP
+         WHERE project_id = $2
+         RETURNING *`,
+        [isArchived, projectId]
+    );
+    return result.rows[0];
+};
+
 module.exports = {
     createProject,
     getAllProjects,
@@ -228,5 +252,7 @@ module.exports = {
     updateProject,
     addMember,
     removeMember,
-    getProjectMembers
+    getProjectMembers,
+    deleteProject,
+    setArchived
 };

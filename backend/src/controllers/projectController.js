@@ -177,6 +177,75 @@ const getProjectMembers = async (req, res) => {
     }
 };
 
+const archiveProject = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const requesterId = req.user.user_id;
+        const userRole = req.user.role_name;
+
+        const project = await projectService.archiveProject(projectId, requesterId, userRole);
+        return res.status(200).json({
+            message: 'Project archived successfully',
+            project
+        });
+
+    } catch (error) {
+        const isNotFound = error.message === 'Project not found';
+        const isForbidden = error.message === 'You can only archive projects you created';
+        const isConflict = error.message === 'Project is already archived';
+        const status = isNotFound ? 404 : isForbidden ? 403 : isConflict ? 409 : 500;
+        return res.status(status).json({
+            error: isNotFound ? 'Not Found' : isForbidden ? 'Forbidden' : isConflict ? 'Conflict' : 'Internal Server Error',
+            message: error.message
+        });
+    }
+};
+
+const unarchiveProject = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const requesterId = req.user.user_id;
+        const userRole = req.user.role_name;
+
+        const project = await projectService.unarchiveProject(projectId, requesterId, userRole);
+        return res.status(200).json({
+            message: 'Project unarchived successfully',
+            project
+        });
+
+    } catch (error) {
+        const isNotFound = error.message === 'Project not found';
+        const isForbidden = error.message === 'You can only unarchive projects you created';
+        const isConflict = error.message === 'Project is not archived';
+        const status = isNotFound ? 404 : isForbidden ? 403 : isConflict ? 409 : 500;
+        return res.status(status).json({
+            error: isNotFound ? 'Not Found' : isForbidden ? 'Forbidden' : isConflict ? 'Conflict' : 'Internal Server Error',
+            message: error.message
+        });
+    }
+};
+
+const deleteProject = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const userRole = req.user.role_name;
+
+        await projectService.deleteProject(projectId, userRole);
+        return res.status(200).json({
+            message: 'Project deleted permanently'
+        });
+
+    } catch (error) {
+        const isNotFound = error.message === 'Project not found';
+        const isForbidden = error.message === 'Only an Administrator can permanently delete a project';
+        const status = isNotFound ? 404 : isForbidden ? 403 : 500;
+        return res.status(status).json({
+            error: isNotFound ? 'Not Found' : isForbidden ? 'Forbidden' : 'Internal Server Error',
+            message: error.message
+        });
+    }
+};
+
 module.exports = {
     createProject,
     getAllProjects,
@@ -184,5 +253,8 @@ module.exports = {
     updateProject,
     addMember,
     removeMember,
-    getProjectMembers
+    getProjectMembers,
+    archiveProject,
+    unarchiveProject,
+    deleteProject
 };
