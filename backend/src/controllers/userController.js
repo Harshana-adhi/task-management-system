@@ -168,6 +168,20 @@ const getAllRoles = async (req, res) => {
     }
 };
 
+const getUserLookup = async (req, res) => {
+    try {
+        const { search, role_name } = req.query;
+        const users = await userService.getUserLookup(search, role_name);
+        return res.status(200).json(users);
+
+    } catch (error) {
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to fetch users'
+        });
+    }
+};
+
 module.exports = {
     createUser,
     getAllUsers,
@@ -176,5 +190,6 @@ module.exports = {
     deactivateUser,
     activateUser,
     assignRole,
-    getAllRoles
+    getAllRoles,
+    getUserLookup
 };

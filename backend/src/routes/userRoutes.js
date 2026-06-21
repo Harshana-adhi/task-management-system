@@ -8,7 +8,8 @@ const {
     deactivateUser,
     activateUser,
     assignRole,
-    getAllRoles
+    getAllRoles,
+    getUserLookup
 } = require('../controllers/userController');
 const { authenticate, authorize } = require('../middlewares/authMiddleware');
 const { validate } = require('../middlewares/validationMiddleware');
@@ -16,6 +17,9 @@ const { createUserSchema, updateUserSchema } = require('../validators/userValida
 
 // Get all roles
 router.get('/roles', authenticate, authorize('Admin'), getAllRoles);
+
+// Get user lookup
+router.get('/lookup', authenticate, authorize('Admin', 'Project Manager'), getUserLookup);
 
 // Create user (Admin only)
 router.post('/', authenticate, authorize('Admin'), validate(createUserSchema), createUser);

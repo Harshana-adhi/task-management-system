@@ -74,6 +74,10 @@ const getAllRoles = async () => {
     return await userRepository.getAllRoles();
 };
 
+const getUserLookup = async (search, roleName) => {
+    return await userRepository.getUserLookup(search, roleName);
+};
+
 module.exports = {
     createUser,
     getAllUsers,
@@ -82,5 +86,6 @@ module.exports = {
     deactivateUser,
     activateUser,
     assignRole,
-    getAllRoles
+    getAllRoles,
+    getUserLookup
 };
