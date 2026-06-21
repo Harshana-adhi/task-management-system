@@ -120,6 +120,34 @@ const getAllRoles = async () => {
     return result.rows;
 };
 
+const getUserLookup = async (search, roleName) => {
+    let query = `
+        SELECT u.user_id, u.full_name, u.email, r.role_name
+        FROM users u
+        JOIN roles r ON u.role_id = r.role_id
+        WHERE u.is_active = TRUE
+    `;
+    const values = [];
+    let index = 1;
+
+    if (search) {
+        query += ` AND (u.full_name ILIKE $${index} OR u.email ILIKE $${index})`;
+        values.push(`%${search}%`);
+        index++;
+    }
+
+    if (roleName) {
+        query += ` AND r.role_name = $${index}`;
+        values.push(roleName);
+        index++;
+    }
+
+    query += ` ORDER BY u.full_name ASC`;
+
+    const result = await pool.query(query, values);
+    return result.rows;
+};
+
 module.exports = {
     createUser,
     getAllUsers,
@@ -128,5 +156,6 @@ module.exports = {
     updateUser,
     deactivateUser,
     activateUser,
-    getAllRoles
+    getAllRoles,
+    getUserLookup
 };

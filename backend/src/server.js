@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const path = require('path');
+const http = require('http');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
@@ -10,9 +10,13 @@ const userRoutes = require('./routes/userRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const attachmentRoutes = require('./routes/attachmentRoutes');
 const projectRoutes = require('./routes/projectRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const { errorMiddleware, notFoundMiddleware } = require('./middlewares/errorMiddleware');
+const { initSocket } = require('./sockets/notificationSocket');
+const { startDeadlineChecker } = require('./jobs/deadlineChecker');
 
 const app = express();
+const httpServer = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 
 // Middlewares
@@ -38,9 +42,6 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded files statically
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
@@ -48,6 +49,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/attachments', attachmentRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Test route
 app.get('/', (req, res) => {
@@ -60,8 +62,14 @@ app.use(notFoundMiddleware);
 // Global error handler (must be last)
 app.use(errorMiddleware);
 
+// Initialize Socket.io
+initSocket(httpServer);
+
+// Start deadline checker
+startDeadlineChecker();
+
 // Start server
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
 

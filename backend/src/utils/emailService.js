@@ -1,16 +1,10 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendWelcomeEmail = async (email, fullName, temporaryPassword) => {
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
+    const { data, error } = await resend.emails.send({
+        from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
         to: email,
         subject: 'Welcome to Task Management System',
         html: `
@@ -26,9 +20,14 @@ const sendWelcomeEmail = async (email, fullName, temporaryPassword) => {
             <br>
             <p>Task Management System</p>
         `
-    };
+    });
 
-    await transporter.sendMail(mailOptions);
+    if (error) {
+        console.error('Resend email error:', error);
+        throw new Error('Failed to send welcome email');
+    }
+
+    return data;
 };
 
 module.exports = { sendWelcomeEmail };

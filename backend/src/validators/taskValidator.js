@@ -1,9 +1,9 @@
 const Joi = require('joi');
 
 const createTaskSchema = Joi.object({
-    project_id: Joi.string().uuid().required().messages({
-        'string.guid': 'project_id must be a valid UUID',
-        'any.required': 'project_id is required',
+    projectId: Joi.string().uuid().required().messages({
+        'string.guid': 'projectId must be a valid UUID',
+        'any.required': 'projectId is required',
     }),
     title: Joi.string().max(200).required().messages({
         'string.max': 'Title cannot exceed 200 characters',
@@ -11,18 +11,11 @@ const createTaskSchema = Joi.object({
         'any.required': 'Task title is required',
     }),
     description: Joi.string().optional().allow(''),
-    status: Joi.string()
-        .valid('To Do', 'In Progress', 'Completed')
-        .default('To Do')
-        .messages({
-            'any.only': 'Status must be one of: To Do, In Progress, Completed',
-        }),
     priority: Joi.string().valid('Low', 'Medium', 'High').required().messages({
         'any.only': 'Priority must be one of: Low, Medium, High',
         'any.required': 'Priority is required',
     }),
-    due_date: Joi.date().iso().greater('now').optional().messages({
-        'date.greater': 'Due date cannot be in the past',
+    dueDate: Joi.date().iso().optional().messages({
         'date.format': 'Due date must be a valid date',
     }),
 });
@@ -42,4 +35,21 @@ const updateTaskSchema = Joi.object({
     due_date: Joi.date().iso().optional(),
 }).min(1).message('At least one field must be provided to update');
 
-module.exports = { createTaskSchema, updateTaskSchema };
+const updateTaskStatusSchema = Joi.object({
+    status: Joi.string()
+        .valid('To Do', 'In Progress', 'Completed')
+        .required()
+        .messages({
+            'any.only': 'Status must be one of: To Do, In Progress, Completed',
+            'any.required': 'Status is required',
+        }),
+});
+
+const assignTaskSchema = Joi.object({
+    userId: Joi.string().uuid().required().messages({
+        'string.guid': 'userId must be a valid UUID',
+        'any.required': 'userId is required',
+    }),
+});
+
+module.exports = { createTaskSchema, updateTaskSchema, updateTaskStatusSchema, assignTaskSchema };

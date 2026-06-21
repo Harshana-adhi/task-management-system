@@ -8,15 +8,21 @@ const {
     deactivateUser,
     activateUser,
     assignRole,
-    getAllRoles
+    getAllRoles,
+    getUserLookup
 } = require('../controllers/userController');
 const { authenticate, authorize } = require('../middlewares/authMiddleware');
+const { validate } = require('../middlewares/validationMiddleware');
+const { createUserSchema, updateUserSchema } = require('../validators/userValidator');
 
 // Get all roles
 router.get('/roles', authenticate, authorize('Admin'), getAllRoles);
 
+// Get user lookup
+router.get('/lookup', authenticate, authorize('Admin', 'Project Manager'), getUserLookup);
+
 // Create user (Admin only)
-router.post('/', authenticate, authorize('Admin'), createUser);
+router.post('/', authenticate, authorize('Admin'), validate(createUserSchema), createUser);
 
 // Get all users (Admin only) - searchable & filterable
 router.get('/', authenticate, authorize('Admin'), getAllUsers);
@@ -25,7 +31,7 @@ router.get('/', authenticate, authorize('Admin'), getAllUsers);
 router.get('/:userId', authenticate, authorize('Admin'), getUserById);
 
 // Update user (Admin only)
-router.put('/:userId', authenticate, authorize('Admin'), updateUser);
+router.put('/:userId', authenticate, authorize('Admin'), validate(updateUserSchema), updateUser);
 
 // Assign role to user (Admin only)
 router.patch('/:userId/role', authenticate, authorize('Admin'), assignRole);
