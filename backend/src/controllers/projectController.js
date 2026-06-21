@@ -120,7 +120,8 @@ const addMember = async (req, res) => {
 
     } catch (error) {
         const isNotFound = error.message === 'Project not found';
-        const isForbidden = error.message === 'You can only manage members of projects you created';
+        const isForbidden = error.message === 'You can only manage members of projects you created' ||
+                            error.message === 'Project Managers can only add Collaborators to a project';
         const isConflict = error.message === 'User is already a member of this project';
         const isUserNotFound = error.message === 'User not found or inactive';
         const status = isNotFound || isUserNotFound ? 404 : isForbidden ? 403 : isConflict ? 409 : 500;

@@ -1,4 +1,5 @@
 const projectRepository = require('../repositories/projectRepository');
+const userRepository = require('../repositories/userRepository');
 
 const createProject = async (projectName, description, createdBy) => {
     return await projectRepository.createProject(projectName, description, createdBy);
@@ -32,6 +33,18 @@ const addMember = async (projectId, userId, requesterId, userRole) => {
     // Project Manager can only manage their own projects
     if (userRole === 'Project Manager' && project.created_by !== requesterId) {
         throw new Error('You can only manage members of projects you created');
+    }
+
+    // Project Managers can only add Collaborators to a project — Admins,
+    // other Project Managers, etc. are added/managed at the user-account
+    // level (Phase 3), not as project members. Admin is exempt from this
+    // restriction (full access).
+    if (userRole === 'Project Manager') {
+        const targetUser = await userRepository.getUserById(userId);
+        if (!targetUser) throw new Error('User not found or inactive');
+        if (targetUser.role_name !== 'Collaborator') {
+            throw new Error('Project Managers can only add Collaborators to a project');
+        }
     }
 
     return await projectRepository.addMember(projectId, userId);
