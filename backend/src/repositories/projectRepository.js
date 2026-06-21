@@ -19,6 +19,21 @@ const createProject = async (projectName, description, createdBy) => {
     return result.rows[0];
 };
 
+const PROJECT_LIST_SELECT = `
+    p.project_id,
+    p.project_name,
+    p.description,
+    p.is_archived,
+    p.created_at,
+    p.updated_at,
+    p.created_by,
+    u.full_name AS created_by_name,
+    u.email AS created_by_email,
+    cr.role_name AS created_by_role,
+    p.assigned_manager_id,
+    m.full_name AS assigned_manager_name,
+    m.email AS assigned_manager_email`;
+
 const getAllProjects = async (userId, userRole) => {
     let query;
     let values = [];
@@ -27,41 +42,29 @@ const getAllProjects = async (userId, userRole) => {
         // Admin sees all projects
         query = `
             SELECT 
-                p.project_id,
-                p.project_name,
-                p.description,
-                p.is_archived,
-                p.created_at,
-                p.updated_at,
-                p.created_by,
-                u.full_name AS created_by_name,
-                u.email AS created_by_email,
+                ${PROJECT_LIST_SELECT},
                 COUNT(DISTINCT pm.user_id) AS member_count
             FROM projects p
             LEFT JOIN users u ON p.created_by = u.user_id
+            LEFT JOIN roles cr ON u.role_id = cr.role_id
+            LEFT JOIN users m ON p.assigned_manager_id = m.user_id
             LEFT JOIN project_members pm ON p.project_id = pm.project_id
-            GROUP BY p.project_id, u.full_name, u.email
+            GROUP BY p.project_id, u.full_name, u.email, cr.role_name, m.full_name, m.email
             ORDER BY p.created_at DESC`;
 
     } else if (userRole === 'Project Manager') {
-        // Project Manager sees only projects they created
+        // Project Manager sees projects they created OR were assigned to manage
         query = `
             SELECT 
-                p.project_id,
-                p.project_name,
-                p.description,
-                p.is_archived,
-                p.created_at,
-                p.updated_at,
-                p.created_by,
-                u.full_name AS created_by_name,
-                u.email AS created_by_email,
+                ${PROJECT_LIST_SELECT},
                 COUNT(DISTINCT pm.user_id) AS member_count
             FROM projects p
             LEFT JOIN users u ON p.created_by = u.user_id
+            LEFT JOIN roles cr ON u.role_id = cr.role_id
+            LEFT JOIN users m ON p.assigned_manager_id = m.user_id
             LEFT JOIN project_members pm ON p.project_id = pm.project_id
-            WHERE p.created_by = $1
-            GROUP BY p.project_id, u.full_name, u.email
+            WHERE p.created_by = $1 OR p.assigned_manager_id = $1
+            GROUP BY p.project_id, u.full_name, u.email, cr.role_name, m.full_name, m.email
             ORDER BY p.created_at DESC`;
         values = [userId];
 
@@ -69,22 +72,16 @@ const getAllProjects = async (userId, userRole) => {
         // Collaborator sees only projects they are members of
         query = `
             SELECT 
-                p.project_id,
-                p.project_name,
-                p.description,
-                p.is_archived,
-                p.created_at,
-                p.updated_at,
-                p.created_by,
-                u.full_name AS created_by_name,
-                u.email AS created_by_email,
+                ${PROJECT_LIST_SELECT},
                 COUNT(DISTINCT pm2.user_id) AS member_count
             FROM projects p
             LEFT JOIN users u ON p.created_by = u.user_id
+            LEFT JOIN roles cr ON u.role_id = cr.role_id
+            LEFT JOIN users m ON p.assigned_manager_id = m.user_id
             JOIN project_members pm ON p.project_id = pm.project_id
             LEFT JOIN project_members pm2 ON p.project_id = pm2.project_id
             WHERE pm.user_id = $1
-            GROUP BY p.project_id, u.full_name, u.email
+            GROUP BY p.project_id, u.full_name, u.email, cr.role_name, m.full_name, m.email
             ORDER BY p.created_at DESC`;
         values = [userId];
     }
@@ -93,6 +90,14 @@ const getAllProjects = async (userId, userRole) => {
     return result.rows;
 };
 
+const PROJECT_DETAIL_SELECT = `
+    p.*,
+    u.full_name AS created_by_name,
+    u.email AS created_by_email,
+    cr.role_name AS created_by_role,
+    m.full_name AS assigned_manager_name,
+    m.email AS assigned_manager_email`;
+
 const getProjectById = async (projectId, userId, userRole) => {
     let query;
     let values = [projectId];
@@ -100,26 +105,32 @@ const getProjectById = async (projectId, userId, userRole) => {
     if (userRole === 'Admin') {
         // Admin can view any project
         query = `
-            SELECT p.*, u.full_name AS created_by_name, u.email AS created_by_email
+            SELECT ${PROJECT_DETAIL_SELECT}
             FROM projects p
             LEFT JOIN users u ON p.created_by = u.user_id
+            LEFT JOIN roles cr ON u.role_id = cr.role_id
+            LEFT JOIN users m ON p.assigned_manager_id = m.user_id
             WHERE p.project_id = $1`;
 
     } else if (userRole === 'Project Manager') {
-        // Project Manager can only view projects they created
+        // Project Manager can view projects they created OR were assigned to manage
         query = `
-            SELECT p.*, u.full_name AS created_by_name, u.email AS created_by_email
+            SELECT ${PROJECT_DETAIL_SELECT}
             FROM projects p
             LEFT JOIN users u ON p.created_by = u.user_id
-            WHERE p.project_id = $1 AND p.created_by = $2`;
+            LEFT JOIN roles cr ON u.role_id = cr.role_id
+            LEFT JOIN users m ON p.assigned_manager_id = m.user_id
+            WHERE p.project_id = $1 AND (p.created_by = $2 OR p.assigned_manager_id = $2)`;
         values = [projectId, userId];
 
     } else {
         // Collaborator can only view projects they are members of
         query = `
-            SELECT p.*, u.full_name AS created_by_name, u.email AS created_by_email
+            SELECT ${PROJECT_DETAIL_SELECT}
             FROM projects p
             LEFT JOIN users u ON p.created_by = u.user_id
+            LEFT JOIN roles cr ON u.role_id = cr.role_id
+            LEFT JOIN users m ON p.assigned_manager_id = m.user_id
             JOIN project_members pm ON p.project_id = pm.project_id
             WHERE p.project_id = $1 AND pm.user_id = $2`;
         values = [projectId, userId];
@@ -214,9 +225,11 @@ const getProjectMembers = async (projectId, userId, userRole) => {
 
 const getProjectByIdInternal = async (projectId) => {
     const result = await pool.query(
-        `SELECT p.*, u.full_name AS created_by_name, u.email AS created_by_email
+        `SELECT ${PROJECT_DETAIL_SELECT}
          FROM projects p
          LEFT JOIN users u ON p.created_by = u.user_id
+         LEFT JOIN roles cr ON u.role_id = cr.role_id
+         LEFT JOIN users m ON p.assigned_manager_id = m.user_id
          WHERE p.project_id = $1`,
         [projectId]
     );
@@ -244,6 +257,31 @@ const setArchived = async (projectId, isArchived) => {
     return result.rows[0];
 };
 
+// Sets the single assigned manager for a project. Overwrites any
+// previous value — the column structurally allows only one at a time,
+// which is what enforces "only one assigned Project Manager" per project.
+const setAssignedManager = async (projectId, userId) => {
+    const result = await pool.query(
+        `UPDATE projects
+         SET assigned_manager_id = $1, updated_at = CURRENT_TIMESTAMP
+         WHERE project_id = $2
+         RETURNING *`,
+        [userId, projectId]
+    );
+    return result.rows[0];
+};
+
+const removeAssignedManager = async (projectId) => {
+    const result = await pool.query(
+        `UPDATE projects
+         SET assigned_manager_id = NULL, updated_at = CURRENT_TIMESTAMP
+         WHERE project_id = $1
+         RETURNING *`,
+        [projectId]
+    );
+    return result.rows[0];
+};
+
 module.exports = {
     createProject,
     getAllProjects,
@@ -254,5 +292,7 @@ module.exports = {
     removeMember,
     getProjectMembers,
     deleteProject,
-    setArchived
+    setArchived,
+    setAssignedManager,
+    removeAssignedManager
 };

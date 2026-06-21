@@ -39,4 +39,11 @@ router.patch('/:projectId/unarchive', authenticate, authorize('Admin', 'Project 
 // Permanently delete project (Admin only) — irreversible, cascades to tasks/comments/attachments
 router.delete('/:projectId', authenticate, authorize('Admin'), projectController.deleteProject);
 
+// Assign a Project Manager to co-manage this project (Admin only) — grants
+// the same rights as the creator. Only one assigned manager per project.
+router.patch('/:projectId/manager', authenticate, authorize('Admin'), projectController.assignManager);
+
+// Unassign the current manager (Admin only)
+router.delete('/:projectId/manager', authenticate, authorize('Admin'), projectController.unassignManager);
+
 module.exports = router;

@@ -129,6 +129,13 @@ const assignManager = async (projectId, userId, requesterRole) => {
     const project = await projectRepository.getProjectByIdInternal(projectId);
     if (!project) throw new Error('Project not found');
 
+    // A project created by a Project Manager already has its leader —
+    // no co-manager is needed. Assigning a manager only makes sense for
+    // projects created by an Admin, which otherwise have no PM at all.
+    if (project.created_by_role === 'Project Manager') {
+        throw new Error('This project was created by a Project Manager and already has a manager — no co-manager is needed');
+    }
+
     const targetUser = await userRepository.getUserById(userId);
     if (!targetUser) throw new Error('User not found');
     if (targetUser.role_name !== 'Project Manager') {

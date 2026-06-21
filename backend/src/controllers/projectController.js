@@ -270,7 +270,8 @@ const assignManager = async (req, res) => {
         const isNotFound = error.message === 'Project not found' || error.message === 'User not found';
         const isForbidden = error.message === 'Only an Administrator can assign a project manager';
         const isValidation = error.message === 'Only a user with the Project Manager role can be assigned to manage a project';
-        const isConflict = error.message === 'This user is already the assigned manager for this project';
+        const isConflict = error.message === 'This user is already the assigned manager for this project' ||
+                            error.message === 'This project was created by a Project Manager and already has a manager — no co-manager is needed';
         const status = isNotFound ? 404 : isForbidden ? 403 : isValidation ? 400 : isConflict ? 409 : 500;
         return res.status(status).json({
             error: isNotFound ? 'Not Found' : isForbidden ? 'Forbidden' : isValidation ? 'Validation Error' : isConflict ? 'Conflict' : 'Internal Server Error',
