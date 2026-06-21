@@ -40,16 +40,9 @@ router.get(
     getFilteredTasks
 );
 
-router.get(
-    '/',
-    authenticate,
-    authorize('Admin', 'Project Manager', 'Collaborator'),
-    getTasks
-);
-
 // Assign Task To User
 router.post(
-    '/:taskId/assign',
+    '/:taskId/assign', 
     authenticate,
     authorize('Admin', 'Project Manager'),
     assignTask

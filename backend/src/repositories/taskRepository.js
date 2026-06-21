@@ -42,13 +42,24 @@ const createTask = async (
 };
 
 const getAllTasks = async () => {
-    const result = await pool.query(`
-        SELECT *
-        FROM tasks
-        ORDER BY created_at DESC
-    `);
 
-    return result.rows;
+  const result = await pool.query(`
+    SELECT
+      t.*,
+      u.full_name AS assigned_user
+
+    FROM tasks t
+
+    LEFT JOIN task_assignments ta
+      ON t.task_id = ta.task_id
+
+    LEFT JOIN users u
+      ON ta.user_id = u.user_id
+
+    ORDER BY t.created_at DESC
+  `);
+
+  return result.rows;
 };
 
 const updateTask = async (
@@ -103,11 +114,22 @@ const deleteTask = async (taskId) => {
 //filter and sorting
 const getFilteredTasks = async (status, priority) => {
 
-    let query = `
-        SELECT *
-        FROM tasks
-        WHERE 1=1
-    `;
+let query = `
+  SELECT
+    t.*,
+    u.full_name AS assigned_user,
+    ta.user_id AS assigned_user_id
+
+  FROM tasks t
+
+  LEFT JOIN task_assignments ta
+    ON t.task_id = ta.task_id
+
+  LEFT JOIN users u
+    ON ta.user_id = u.user_id
+
+  WHERE 1=1
+`;
 
     const values = [];
     let index = 1;
@@ -125,8 +147,8 @@ const getFilteredTasks = async (status, priority) => {
     }
 
     query += `
-        ORDER BY created_at DESC
-    `;
+    ORDER BY t.created_at DESC
+`;
 
     const result = await pool.query(query, values);
 
