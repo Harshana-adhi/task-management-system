@@ -87,7 +87,7 @@ const updateProject = async (req, res) => {
 
     } catch (error) {
         const isNotFound = error.message === 'Project not found';
-        const isForbidden = error.message === 'You can only update projects you created';
+        const isForbidden = error.message === 'You can only update projects you created or are assigned to manage';
         const isConflict = error.message === 'You already have a project with this name';
         const status = isNotFound ? 404 : isForbidden ? 403 : isConflict ? 409 : 500;
         return res.status(status).json({
@@ -120,7 +120,7 @@ const addMember = async (req, res) => {
 
     } catch (error) {
         const isNotFound = error.message === 'Project not found';
-        const isForbidden = error.message === 'You can only manage members of projects you created' ||
+        const isForbidden = error.message === 'You can only manage members of projects you created or are assigned to manage' ||
                             error.message === 'Project Managers can only add Collaborators to a project';
         const isConflict = error.message === 'User is already a member of this project';
         const isUserNotFound = error.message === 'User not found or inactive';
@@ -147,7 +147,7 @@ const removeMember = async (req, res) => {
     } catch (error) {
         const isNotFound = error.message === 'Project not found' ||
                            error.message === 'Member not found in this project';
-        const isForbidden = error.message === 'You can only manage members of projects you created';
+        const isForbidden = error.message === 'You can only manage members of projects you created or are assigned to manage';
         const status = isNotFound ? 404 : isForbidden ? 403 : 500;
         return res.status(status).json({
             error: isNotFound ? 'Not Found' : isForbidden ? 'Forbidden' : 'Internal Server Error',
@@ -192,7 +192,7 @@ const archiveProject = async (req, res) => {
 
     } catch (error) {
         const isNotFound = error.message === 'Project not found';
-        const isForbidden = error.message === 'You can only archive projects you created';
+        const isForbidden = error.message === 'You can only archive projects you created or are assigned to manage';
         const isConflict = error.message === 'Project is already archived';
         const status = isNotFound ? 404 : isForbidden ? 403 : isConflict ? 409 : 500;
         return res.status(status).json({
@@ -216,7 +216,7 @@ const unarchiveProject = async (req, res) => {
 
     } catch (error) {
         const isNotFound = error.message === 'Project not found';
-        const isForbidden = error.message === 'You can only unarchive projects you created';
+        const isForbidden = error.message === 'You can only unarchive projects you created or are assigned to manage';
         const isConflict = error.message === 'Project is not archived';
         const status = isNotFound ? 404 : isForbidden ? 403 : isConflict ? 409 : 500;
         return res.status(status).json({
@@ -247,6 +247,61 @@ const deleteProject = async (req, res) => {
     }
 };
 
+const assignManager = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const { userId } = req.body;
+        const userRole = req.user.role_name;
+
+        if (!userId) {
+            return res.status(400).json({
+                error: 'Validation Error',
+                message: 'User ID is required'
+            });
+        }
+
+        const project = await projectService.assignManager(projectId, userId, userRole);
+        return res.status(200).json({
+            message: 'Project manager assigned successfully',
+            project
+        });
+
+    } catch (error) {
+        const isNotFound = error.message === 'Project not found' || error.message === 'User not found';
+        const isForbidden = error.message === 'Only an Administrator can assign a project manager';
+        const isValidation = error.message === 'Only a user with the Project Manager role can be assigned to manage a project';
+        const isConflict = error.message === 'This user is already the assigned manager for this project';
+        const status = isNotFound ? 404 : isForbidden ? 403 : isValidation ? 400 : isConflict ? 409 : 500;
+        return res.status(status).json({
+            error: isNotFound ? 'Not Found' : isForbidden ? 'Forbidden' : isValidation ? 'Validation Error' : isConflict ? 'Conflict' : 'Internal Server Error',
+            message: error.message
+        });
+    }
+};
+
+const unassignManager = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const userRole = req.user.role_name;
+
+        const project = await projectService.unassignManager(projectId, userRole);
+        return res.status(200).json({
+            message: 'Project manager unassigned successfully',
+            project
+        });
+
+    } catch (error) {
+        const isNotFound = error.message === 'Project not found';
+        const isForbidden = error.message === 'Only an Administrator can unassign a project manager';
+        const isConflict = error.message === 'This project has no assigned manager';
+        const status = isNotFound ? 404 : isForbidden ? 403 : isConflict ? 409 : 500;
+        return res.status(status).json({
+            error: isNotFound ? 'Not Found' : isForbidden ? 'Forbidden' : isConflict ? 'Conflict' : 'Internal Server Error',
+            message: error.message
+        });
+    }
+};
+
 module.exports = {
     createProject,
     getAllProjects,
@@ -257,5 +312,7 @@ module.exports = {
     getProjectMembers,
     archiveProject,
     unarchiveProject,
-    deleteProject
+    deleteProject,
+    assignManager,
+    unassignManager
 };

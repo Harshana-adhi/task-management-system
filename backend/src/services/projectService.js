@@ -15,24 +15,33 @@ const getProjectById = async (projectId, userId, userRole) => {
     return project;
 };
 
+// A Project Manager can manage a project if they created it OR were
+// assigned to it by an Admin (see assignManager below) — both grant the
+// same rights. Admin can always manage any project.
+const canManageProject = (project, requesterId, userRole) => {
+    if (userRole === 'Admin') return true;
+    if (userRole !== 'Project Manager') return false;
+    return project.created_by === requesterId || project.assigned_manager_id === requesterId;
+};
+
 const updateProject = async (projectId, projectName, description, userId, userRole) => {
     const project = await projectRepository.getProjectByIdInternal(projectId);
     if (!project) throw new Error('Project not found');
 
-    if (userRole === 'Project Manager' && project.created_by !== userId) {
-        throw new Error('You can only update projects you created');
+    if (!canManageProject(project, userId, userRole)) {
+        throw new Error('You can only update projects you created or are assigned to manage');
     }
 
     // Pass createdBy for duplicate check
     return await projectRepository.updateProject(projectId, projectName, description, project.created_by);
 };
+
 const addMember = async (projectId, userId, requesterId, userRole) => {
     const project = await projectRepository.getProjectByIdInternal(projectId);
     if (!project) throw new Error('Project not found');
 
-    // Project Manager can only manage their own projects
-    if (userRole === 'Project Manager' && project.created_by !== requesterId) {
-        throw new Error('You can only manage members of projects you created');
+    if (!canManageProject(project, requesterId, userRole)) {
+        throw new Error('You can only manage members of projects you created or are assigned to manage');
     }
 
     // Project Managers can only add Collaborators to a project — Admins,
@@ -54,9 +63,8 @@ const removeMember = async (projectId, userId, requesterId, userRole) => {
     const project = await projectRepository.getProjectByIdInternal(projectId);
     if (!project) throw new Error('Project not found');
 
-    // Project Manager can only manage their own projects
-    if (userRole === 'Project Manager' && project.created_by !== requesterId) {
-        throw new Error('You can only manage members of projects you created');
+    if (!canManageProject(project, requesterId, userRole)) {
+        throw new Error('You can only manage members of projects you created or are assigned to manage');
     }
 
     const removed = await projectRepository.removeMember(projectId, userId);
@@ -74,9 +82,8 @@ const archiveProject = async (projectId, requesterId, userRole) => {
     const project = await projectRepository.getProjectByIdInternal(projectId);
     if (!project) throw new Error('Project not found');
 
-    // Project Manager can only archive their own projects; Admin can archive any.
-    if (userRole === 'Project Manager' && project.created_by !== requesterId) {
-        throw new Error('You can only archive projects you created');
+    if (!canManageProject(project, requesterId, userRole)) {
+        throw new Error('You can only archive projects you created or are assigned to manage');
     }
     if (project.is_archived) throw new Error('Project is already archived');
 
@@ -87,8 +94,8 @@ const unarchiveProject = async (projectId, requesterId, userRole) => {
     const project = await projectRepository.getProjectByIdInternal(projectId);
     if (!project) throw new Error('Project not found');
 
-    if (userRole === 'Project Manager' && project.created_by !== requesterId) {
-        throw new Error('You can only unarchive projects you created');
+    if (!canManageProject(project, requesterId, userRole)) {
+        throw new Error('You can only unarchive projects you created or are assigned to manage');
     }
     if (!project.is_archived) throw new Error('Project is not archived');
 
@@ -110,6 +117,42 @@ const deleteProject = async (projectId, userRole) => {
     return await projectRepository.deleteProject(projectId);
 };
 
+// Assign one Project Manager to "co-manage" a project — Admin only.
+// Overwrites any previously assigned manager (a project can only have
+// one at a time). The target user must actually hold the Project
+// Manager role.
+const assignManager = async (projectId, userId, requesterRole) => {
+    if (requesterRole !== 'Admin') {
+        throw new Error('Only an Administrator can assign a project manager');
+    }
+
+    const project = await projectRepository.getProjectByIdInternal(projectId);
+    if (!project) throw new Error('Project not found');
+
+    const targetUser = await userRepository.getUserById(userId);
+    if (!targetUser) throw new Error('User not found');
+    if (targetUser.role_name !== 'Project Manager') {
+        throw new Error('Only a user with the Project Manager role can be assigned to manage a project');
+    }
+    if (project.assigned_manager_id === userId) {
+        throw new Error('This user is already the assigned manager for this project');
+    }
+
+    return await projectRepository.setAssignedManager(projectId, userId);
+};
+
+const unassignManager = async (projectId, requesterRole) => {
+    if (requesterRole !== 'Admin') {
+        throw new Error('Only an Administrator can unassign a project manager');
+    }
+
+    const project = await projectRepository.getProjectByIdInternal(projectId);
+    if (!project) throw new Error('Project not found');
+    if (!project.assigned_manager_id) throw new Error('This project has no assigned manager');
+
+    return await projectRepository.removeAssignedManager(projectId);
+};
+
 module.exports = {
     createProject,
     getAllProjects,
@@ -120,5 +163,7 @@ module.exports = {
     getProjectMembers,
     archiveProject,
     unarchiveProject,
-    deleteProject
+    deleteProject,
+    assignManager,
+    unassignManager
 };
