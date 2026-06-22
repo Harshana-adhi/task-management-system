@@ -281,8 +281,8 @@ export default function Users() {
         confirmLabel={confirmTarget?.action === 'deactivate' ? 'Deactivate' : 'Activate'}
         description={
           confirmTarget?.action === 'deactivate'
-            ? `${confirmTarget?.user?.full_name} will lose access to TaskFlow immediately. You can reactivate their account at any time.`
-            : `${confirmTarget?.user?.full_name} will regain access to TaskFlow with their existing credentials.`
+            ? `${confirmTarget?.user?.full_name} will lose access to Taskify immediately. You can reactivate their account at any time.`
+            : `${confirmTarget?.user?.full_name} will regain access to Taskify with their existing credentials.`
         }
       />
     </div>

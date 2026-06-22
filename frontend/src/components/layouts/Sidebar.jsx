@@ -49,7 +49,7 @@ function SidebarContent({ onNavigate }) {
           T
         </div>
         <span className="font-display text-base font-semibold text-slate-900 dark:text-white">
-          TaskFlow
+          Taskify
         </span>
       </div>
       <nav className="flex flex-1 flex-col gap-1 px-3">

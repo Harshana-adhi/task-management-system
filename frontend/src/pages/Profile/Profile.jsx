@@ -66,7 +66,7 @@ export default function Profile() {
       <div>
         <h1 className="text-xl font-semibold text-slate-900 dark:text-white">My profile</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Your account details as stored in TaskFlow.
+          Your account details as stored in Taskify.
         </p>
       </div>
 

@@ -56,3 +56,18 @@ export async function activateUser(userId) {
   const { data } = await api.patch(`/users/${userId}/activate`)
   return data
 }
+
+/**
+ * Lightweight active-user lookup, available to Admin + Project Manager
+ * (unlike the rest of this file's endpoints, which are Admin-only).
+ * Used for picking someone to add to a project or assign a task.
+ * Returns minimal fields: { user_id, full_name, email, role_name }.
+ */
+export async function lookupUsers({ search, roleName } = {}) {
+  const params = {}
+  if (search) params.search = search
+  if (roleName) params.role_name = roleName
+
+  const { data } = await api.get('/users/lookup', { params })
+  return data
+}
