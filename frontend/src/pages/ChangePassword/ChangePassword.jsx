@@ -74,7 +74,7 @@ export default function ChangePassword() {
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {isMandatory
               ? "For security, you need to set a new password before continuing."
-              : 'Update the password used to sign in to TaskFlow.'}
+              : 'Update the password used to sign in to Taskify.'}
           </p>
         </div>
 
