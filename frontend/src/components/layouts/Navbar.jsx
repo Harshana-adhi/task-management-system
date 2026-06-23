@@ -1,9 +1,10 @@
-import { Menu, Moon, Sun, Bell, Search, LogOut } from 'lucide-react'
+import { Menu, Moon, Sun, Search, LogOut } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useUIStore } from '../../store/useUIStore'
-import { useNotificationStore } from '../../store/useNotificationStore'
+import NotificationDropdown from '../notifications/NotificationDropdown'
+import { disconnectSocket } from '../../lib/socket'
 
 function initials(name = '') {
   return name
@@ -21,9 +22,9 @@ export default function Navbar() {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const toggleMobileDrawer = useUIStore((s) => s.toggleMobileDrawer)
-  const unreadCount = useNotificationStore((s) => s.unreadCount)
 
   const handleLogout = () => {
+    disconnectSocket()
     logout()
     navigate('/login', { replace: true })
   }
@@ -56,15 +57,7 @@ export default function Navbar() {
           {theme === 'dark' ? <Sun className="size-4.5" /> : <Moon className="size-4.5" />}
         </button>
 
-        <button
-          aria-label="Notifications"
-          className="relative rounded-md p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-        >
-          <Bell className="size-4.5" />
-          {unreadCount > 0 && (
-            <span className="absolute right-1.5 top-1.5 flex size-2 rounded-full bg-rose-500" />
-          )}
-        </button>
+        <NotificationDropdown />
 
         <Link
           to="/profile"
