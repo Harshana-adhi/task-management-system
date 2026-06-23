@@ -258,6 +258,20 @@ const getFilteredTasks = async (req, res) => {
     }
 };
 
+const getMyTasks = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const tasks = await taskService.getAssignedTasks(userId);
+        return res.status(200).json(tasks);
+
+    } catch (error) {
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to fetch your tasks'
+        });
+    }
+};
+
 module.exports = {
     createTask,
     getAllTasks,
@@ -268,5 +282,6 @@ module.exports = {
     assignTask,
     getTaskAssignments,
     removeAssignment,
-    getFilteredTasks
+    getFilteredTasks,
+    getMyTasks
 };

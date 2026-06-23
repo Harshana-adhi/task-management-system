@@ -7,6 +7,7 @@ import Profile from './pages/Profile/Profile'
 import Dashboard from './pages/Dashboard/Dashboard'
 import Projects from './pages/Projects/Projects'
 import ProjectDetail from './pages/Projects/ProjectDetail'
+import MyTasks from './pages/Tasks/MyTasks'
 import Users from './pages/Admin/Users/Users'
 import NotFound from './pages/NotFound/NotFound'
 
@@ -27,6 +28,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:projectId" element={<ProjectDetail />} />
+            <Route path="/tasks" element={<MyTasks />} />
 
             <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
               <Route path="/admin/users" element={<Users />} />

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, Pencil, UserPlus, UserMinus, Calendar, Archive, ArchiveRestore, Trash2, UserCog } from 'lucide-react'
+import { ArrowLeft, Pencil, UserPlus, UserMinus, Calendar, Archive, ArchiveRestore, Trash2, UserCog, ListChecks } from 'lucide-react'
 import {
   getProjectById,
   updateProject,
@@ -16,6 +16,7 @@ import {
 } from '../../services/projectService'
 import { useAuthStore } from '../../store/useAuthStore'
 import { parseApiError } from '../../lib/apiError'
+import { cn } from '../../lib/cn'
 import Button from '../../components/common/Button'
 import { Badge } from '../../components/common/Badge'
 import { PageLoader } from '../../components/common/Loader'
@@ -23,6 +24,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog'
 import ProjectFormModal from '../../components/projects/ProjectFormModal'
 import AddMemberModal from '../../components/projects/AddMemberModal'
 import DeleteProjectDialog from '../../components/projects/DeleteProjectDialog'
+import ProjectTasks from '../../components/tasks/ProjectTasks'
 
 function initials(name = '') {
   return name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()
@@ -56,6 +58,7 @@ export default function ProjectDetail() {
   const [isAssignManagerOpen, setIsAssignManagerOpen] = useState(false)
   const [isUnassignConfirmOpen, setIsUnassignConfirmOpen] = useState(false)
   const [isManagerActionLoading, setIsManagerActionLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState('overview')
 
   const fetchAll = async () => {
     try {
@@ -291,6 +294,28 @@ export default function ProjectDetail() {
         )}
       </div>
 
+      <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800">
+        {[
+          { key: 'overview', label: 'Overview' },
+          { key: 'tasks', label: 'Tasks', icon: ListChecks },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={cn(
+              'flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors',
+              activeTab === tab.key
+                ? 'border-brand-600 text-brand-700 dark:text-brand-400'
+                : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+            )}
+          >
+            {tab.icon && <tab.icon className="size-4" />}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'overview' && (
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
@@ -342,6 +367,11 @@ export default function ProjectDetail() {
           </div>
         )}
       </div>
+      )}
+
+      {activeTab === 'tasks' && (
+        <ProjectTasks projectId={projectId} canManage={canManage} projectMembers={members} />
+      )}
 
       <ProjectFormModal
         open={isEditOpen}
