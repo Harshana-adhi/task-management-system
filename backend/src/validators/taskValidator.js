@@ -15,8 +15,20 @@ const createTaskSchema = Joi.object({
         'any.only': 'Priority must be one of: Low, Medium, High',
         'any.required': 'Priority is required',
     }),
-    dueDate: Joi.date().iso().optional().messages({
+    dueDate: Joi.date().iso().optional().custom((value, helpers) => {
+        // Compare calendar dates (UTC), not exact timestamps — "today" must
+        // always be allowed regardless of what time it currently is.
+        const today = new Date();
+        today.setUTCHours(0, 0, 0, 0);
+        const due = new Date(value);
+        due.setUTCHours(0, 0, 0, 0);
+        if (due < today) {
+            return helpers.error('date.past');
+        }
+        return value;
+    }).messages({
         'date.format': 'Due date must be a valid date',
+        'date.past': 'Due date cannot be in the past',
     }),
 });
 

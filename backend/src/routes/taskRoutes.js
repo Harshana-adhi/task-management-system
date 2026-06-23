@@ -10,7 +10,8 @@ const {
     assignTask,
     getTaskAssignments,
     removeAssignment,
-    getFilteredTasks
+    getFilteredTasks,
+    getMyTasks
 } = require('../controllers/taskController');
 const { authenticate, authorize } = require('../middlewares/authMiddleware');
 const { validate } = require('../middlewares/validationMiddleware');
@@ -23,6 +24,9 @@ const {
 
 // Filter & Sort Tasks (must be before /:taskId)
 router.get('/filter', authenticate, authorize('Admin', 'Project Manager', 'Collaborator'), getFilteredTasks);
+
+// My assigned tasks across all projects (must be before /:taskId)
+router.get('/my-tasks', authenticate, authorize('Admin', 'Project Manager', 'Collaborator'), getMyTasks);
 
 // Create Task
 router.post('/', authenticate, authorize('Admin', 'Project Manager'), validate(createTaskSchema), createTask);

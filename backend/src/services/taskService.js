@@ -3,10 +3,13 @@ const taskRepository = require('../repositories/taskRepository');
 const taskAssignmentRepository = require('../repositories/taskAssignmentRepository');
 const notificationService = require('./notificationService');
 
-// Helper to check if PM owns the project
+// A Project Manager can act on a project if they created it OR were
+// assigned to co-manage it by an Admin (see Phase 4's projectService —
+// same rule, mirrored here so task permissions stay consistent with
+// project permissions).
 const checkProjectOwnership = async (projectId, userId) => {
     const result = await pool.query(
-        'SELECT * FROM projects WHERE project_id = $1 AND created_by = $2',
+        'SELECT * FROM projects WHERE project_id = $1 AND (created_by = $2 OR assigned_manager_id = $2)',
         [projectId, userId]
     );
     return result.rows.length > 0;
@@ -22,8 +25,10 @@ const createTask = async (projectId, title, description, priority, dueDate, crea
         throw new Error('Project not found');
     }
 
-    // Project Manager can only create tasks in their own projects
-    if (userRole === 'Project Manager' && projectResult.rows[0].created_by !== createdBy) {
+    // Project Manager can only create tasks in their own projects OR
+    // projects they're assigned to co-manage
+    const project = projectResult.rows[0];
+    if (userRole === 'Project Manager' && project.created_by !== createdBy && project.assigned_manager_id !== createdBy) {
         throw new Error('You can only create tasks in your own projects');
     }
 
@@ -35,7 +40,7 @@ const getTaskById = async (taskId, userId, userRole) => {
     if (!task) throw new Error('Task not found');
 
     if (userRole === 'Project Manager') {
-        if (task.project_created_by !== userId) {
+        if (task.project_created_by !== userId && task.project_assigned_manager_id !== userId) {
             throw new Error('Access denied');
         }
     }
@@ -75,7 +80,7 @@ const updateTask = async (taskId, fields, userId, userRole) => {
     const task = await taskRepository.getTaskById(taskId);
     if (!task) throw new Error('Task not found');
 
-    if (userRole === 'Project Manager' && task.project_created_by !== userId) {
+    if (userRole === 'Project Manager' && task.project_created_by !== userId && task.project_assigned_manager_id !== userId) {
         throw new Error('You can only update tasks in your own projects');
     }
 
@@ -118,7 +123,7 @@ const deleteTask = async (taskId, userId, userRole) => {
     const task = await taskRepository.getTaskById(taskId);
     if (!task) throw new Error('Task not found');
 
-    if (userRole === 'Project Manager' && task.project_created_by !== userId) {
+    if (userRole === 'Project Manager' && task.project_created_by !== userId && task.project_assigned_manager_id !== userId) {
         throw new Error('You can only delete tasks in your own projects');
     }
 
@@ -139,7 +144,7 @@ const assignTask = async (taskId, userId, requesterId, userRole) => {
     const task = await taskRepository.getTaskById(taskId);
     if (!task) throw new Error('Task not found');
 
-    if (userRole === 'Project Manager' && task.project_created_by !== requesterId) {
+    if (userRole === 'Project Manager' && task.project_created_by !== requesterId && task.project_assigned_manager_id !== requesterId) {
         throw new Error('You can only assign tasks in your own projects');
     }
 
@@ -198,7 +203,7 @@ const removeAssignment = async (taskId, userId, requesterId, userRole) => {
     const task = await taskRepository.getTaskById(taskId);
     if (!task) throw new Error('Task not found');
 
-    if (userRole === 'Project Manager' && task.project_created_by !== requesterId) {
+    if (userRole === 'Project Manager' && task.project_created_by !== requesterId && task.project_assigned_manager_id !== requesterId) {
         throw new Error('You can only manage assignments in your own projects');
     }
 

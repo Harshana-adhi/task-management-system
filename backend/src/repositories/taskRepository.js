@@ -21,7 +21,7 @@ const createTask = async (projectId, title, description, priority, dueDate, crea
 
 const getTaskById = async (taskId) => {
     const result = await pool.query(
-        `SELECT t.*, p.created_by AS project_created_by
+        `SELECT t.*, p.created_by AS project_created_by, p.assigned_manager_id AS project_assigned_manager_id
          FROM tasks t
          JOIN projects p ON t.project_id = p.project_id
          WHERE t.task_id = $1`,
@@ -31,21 +31,30 @@ const getTaskById = async (taskId) => {
 };
 
 const getAllTasks = async (projectId, userId, userRole) => {
+    // Correlated subquery aggregates assignees per task as a JSON array —
+    // avoids an N+1 call to /assignments for every task in a board/table view.
+    const assigneesSubquery = `(
+        SELECT json_agg(json_build_object('user_id', u.user_id, 'full_name', u.full_name, 'email', u.email))
+        FROM task_assignments ta2
+        JOIN users u ON ta2.user_id = u.user_id
+        WHERE ta2.task_id = t.task_id
+    ) AS assignees`;
+
     let query;
     let values = [projectId];
 
     if (userRole === 'Collaborator') {
         query = `
-            SELECT t.* FROM tasks t
+            SELECT t.*, ${assigneesSubquery} FROM tasks t
             JOIN task_assignments ta ON t.task_id = ta.task_id
             WHERE t.project_id = $1 AND ta.user_id = $2
             ORDER BY t.created_at DESC`;
         values = [projectId, userId];
     } else {
         query = `
-            SELECT * FROM tasks
-            WHERE project_id = $1
-            ORDER BY created_at DESC`;
+            SELECT t.*, ${assigneesSubquery} FROM tasks t
+            WHERE t.project_id = $1
+            ORDER BY t.created_at DESC`;
     }
 
     const result = await pool.query(query, values);
@@ -54,10 +63,12 @@ const getAllTasks = async (projectId, userId, userRole) => {
 
 const getAssignedTasks = async (userId) => {
     const result = await pool.query(
-        `SELECT t.* FROM tasks t
+        `SELECT t.*, p.project_name
+         FROM tasks t
          JOIN task_assignments ta ON t.task_id = ta.task_id
+         JOIN projects p ON t.project_id = p.project_id
          WHERE ta.user_id = $1
-         ORDER BY t.created_at DESC`,
+         ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`,
         [userId]
     );
     return result.rows;
@@ -127,34 +138,41 @@ const deleteTask = async (taskId) => {
 };
 
 const getFilteredTasks = async (projectId, userId, userRole, status, priority) => {
+    const assigneesSubquery = `(
+        SELECT json_agg(json_build_object('user_id', u.user_id, 'full_name', u.full_name, 'email', u.email))
+        FROM task_assignments ta2
+        JOIN users u ON ta2.user_id = u.user_id
+        WHERE ta2.task_id = t.task_id
+    ) AS assignees`;
+
     let query;
     const values = [projectId];
     let index = 2;
 
     if (userRole === 'Collaborator') {
         query = `
-            SELECT t.* FROM tasks t
+            SELECT t.*, ${assigneesSubquery} FROM tasks t
             JOIN task_assignments ta ON t.task_id = ta.task_id
             WHERE t.project_id = $1 AND ta.user_id = $${index}`;
         values.push(userId);
         index++;
     } else {
-        query = `SELECT * FROM tasks WHERE project_id = $1`;
+        query = `SELECT t.*, ${assigneesSubquery} FROM tasks t WHERE t.project_id = $1`;
     }
 
     if (status) {
-        query += ` AND ${userRole === 'Collaborator' ? 't.' : ''}status = $${index}`;
+        query += ` AND t.status = $${index}`;
         values.push(status);
         index++;
     }
 
     if (priority) {
-        query += ` AND ${userRole === 'Collaborator' ? 't.' : ''}priority = $${index}`;
+        query += ` AND t.priority = $${index}`;
         values.push(priority);
         index++;
     }
 
-    query += ` ORDER BY ${userRole === 'Collaborator' ? 't.' : ''}created_at DESC`;
+    query += ` ORDER BY t.created_at DESC`;
 
     const result = await pool.query(query, values);
     return result.rows;
