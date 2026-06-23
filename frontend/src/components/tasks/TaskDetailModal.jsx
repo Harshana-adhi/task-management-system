@@ -8,6 +8,8 @@ import ConfirmDialog from '../common/ConfirmDialog'
 import { StatusBadge, PriorityBadge } from '../common/Badge'
 import { Spinner } from '../common/Loader'
 import AssignTaskModal from './AssignTaskModal'
+import CommentThread from './CommentThread'
+import AttachmentList from './AttachmentList'
 import {
   getTaskAssignments,
   updateTaskStatus,
@@ -205,6 +207,14 @@ export default function TaskDetailModal({
                 ))}
               </ul>
             )}
+          </div>
+
+          <div className="border-t border-slate-100 pt-4 dark:border-slate-800">
+            <AttachmentList taskId={task.task_id} />
+          </div>
+
+          <div className="border-t border-slate-100 pt-4 dark:border-slate-800">
+            <CommentThread taskId={task.task_id} />
           </div>
 
           {canManage && (
