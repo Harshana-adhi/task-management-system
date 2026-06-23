@@ -2,9 +2,12 @@ import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Navbar from './Navbar'
 import Footer from './Footer'
+import { useNotificationsSocket } from '../../hooks/useNotificationsSocket'
 
 /** Shell for every authenticated page: sidebar + topbar + content + footer. */
 export default function AppLayout() {
+  useNotificationsSocket()
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
       <Sidebar />
