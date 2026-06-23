@@ -1,7 +1,23 @@
 const notificationRepository = require('../repositories/notificationRepository');
 
 const createNotification = async ({ userId, title, message }) => {
-    return await notificationRepository.createNotification(userId, title, message);
+    const notification = await notificationRepository.createNotification(userId, title, message);
+
+    // Emit in real time to the user if they're currently connected.
+    // Lazy require avoids a circular dependency — notificationSocket.js
+    // requires this file too, so requiring it at the top of this file
+    // would create a load-order problem.
+    try {
+        const { getIO } = require('../sockets/notificationSocket');
+        const io = getIO();
+        if (io) {
+            io.to(`user:${userId}`).emit('new_notification', notification);
+        }
+    } catch (err) {
+        console.error('Failed to emit real-time notification:', err);
+    }
+
+    return notification;
 };
 
 const getUnreadNotifications = async (userId) => {

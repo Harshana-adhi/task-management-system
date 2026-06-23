@@ -106,15 +106,12 @@ const initSocket = (httpServer) => {
     return io;
 };
 
+// Thin wrapper kept for backwards compatibility with existing callers
+// (admin broadcast, deadline checker) — actual persistence AND real-time
+// emission both now happen centrally inside notificationService.createNotification.
 const sendNotification = async ({ userId, title, message }) => {
     try {
-        const notification = await notificationService.createNotification({ userId, title, message });
-
-        if (io) {
-            io.to(`user:${userId}`).emit('new_notification', notification);
-        }
-
-        return notification;
+        return await notificationService.createNotification({ userId, title, message });
     } catch (err) {
         console.error('sendNotification error:', err);
     }

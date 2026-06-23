@@ -98,7 +98,10 @@ const updateTaskStatus = async (taskId, status, userId, userRole) => {
 
     const updatedTask = await taskRepository.updateTaskStatus(taskId, status);
 
-    // Notify project owner about status change (non-blocking)
+    // Notify project owner(s) about status change (non-blocking).
+    // Notifies both the project creator and the assigned co-manager (if
+    // one exists and differs) — same co-manager rule as everywhere else.
+    // Never notifies the person who made the change themselves.
     try {
         const userResult = await pool.query(
             'SELECT full_name FROM users WHERE user_id = $1',
@@ -106,12 +109,19 @@ const updateTaskStatus = async (taskId, status, userId, userRole) => {
         );
         const changedByName = userResult.rows[0]?.full_name || 'Someone';
 
-        await notificationService.notifyStatusChange({
-            projectCreatorId: task.project_created_by,
-            taskTitle: task.title,
-            newStatus: status,
-            changedByName
-        });
+        const recipients = new Set(
+            [task.project_created_by, task.project_assigned_manager_id].filter(Boolean)
+        );
+        recipients.delete(userId);
+
+        for (const recipientId of recipients) {
+            await notificationService.notifyStatusChange({
+                projectCreatorId: recipientId,
+                taskTitle: task.title,
+                newStatus: status,
+                changedByName
+            });
+        }
     } catch (notifyError) {
         console.error('Failed to send status change notification:', notifyError);
     }
