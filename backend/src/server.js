@@ -4,6 +4,9 @@ const helmet = require('helmet');
 const http = require('http');
 require('dotenv').config();
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -51,6 +54,9 @@ app.use('/api/attachments', attachmentRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/notifications', notificationRoutes);
 
+// API documentation (Swagger UI)
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // Test route
 app.get('/', (req, res) => {
     res.json({ message: 'Task Management System API is running' });
@@ -71,6 +77,7 @@ startDeadlineChecker();
 // Start server
 httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`API docs available at http://localhost:${PORT}/api-docs`);
 });
 
 module.exports = app;
