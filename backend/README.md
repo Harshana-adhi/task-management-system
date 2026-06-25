@@ -1,6 +1,6 @@
 # Task Management System — Backend
 
-REST API for the Task Management System (INTE 21323 Group Project). Provides authentication and role-based access control, project and task management, comments, file attachments, and real-time notifications over WebSockets.
+REST API for the Task Management System (Web Development Group Project). Provides authentication and role-based access control, project and task management, comments, file attachments, and real-time notifications over WebSockets.
 
 ## Tech Stack
 
@@ -98,14 +98,8 @@ A GitHub Actions workflow (`.github/workflows/backend-ci.yml`) runs install + te
 
 ## Deployment
 
-- Hosted on **Render**, with auto-deploy on push to `main`.
+- Hosted on **Render**, with auto-deploy on push to `develop`.
 - CORS is locked to `FRONTEND_URL` in production.
-- Live demo: `<your-render-url>`
+- Live demo: `https://task-management-system-backend-spcl.onrender.com`
 
-## Team Contributions
 
-| Name | Module / Feature |
-|---|---|
-| _Add team member_ | _e.g. Auth & JWT, Project module_ |
-| _Add team member_ | _e.g. Task module, Notifications_ |
-| _Add team member_ | _e.g. Attachments, Comments, DevOps_ |
