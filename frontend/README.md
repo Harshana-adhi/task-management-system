@@ -1,16 +1,30 @@
-# React + Vite
+# TaskFlow — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React (Vite) + Tailwind CSS frontend for the Task Management System.
 
-Currently, two official plugins are available:
+> Full project documentation (setup, scripts, screenshots, contributions) is completed in Phase 9. This is a minimal note so the team can run what's built so far.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Setup
 
-## React Compiler
+```bash
+cd frontend
+npm install
+cp .env.example .env   # adjust VITE_API_URL / VITE_SOCKET_URL if needed
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Scripts
 
-## Expanding the ESLint configuration
+- `npm run dev` — start the dev server
+- `npm run build` — production build
+- `npm run preview` — preview the production build locally
+- `npm run lint` — run ESLint
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Design system (Phase 1)
+
+- Tailwind v4, configured in `src/index.css` via `@theme` (brand color scale, status/priority color tokens, fonts).
+- Class-based dark mode — toggle lives in the navbar, state in `src/store/useThemeStore.js`.
+- Shared building blocks in `src/components/common/` (Button, Input, Modal, Loader, Table, Badge, Toast). Build new UI out of these rather than one-off styles.
+- `StatusBadge` / `PriorityBadge` in `Badge.jsx` are the single source of truth for status/priority colors — reuse them everywhere a status or priority is shown (table, Kanban, task detail).
+- Global state: Zustand stores in `src/store/` (`useAuthStore`, `useThemeStore`, `useNotificationStore`, `useUIStore`).
+- API calls: import the shared `api` instance from `src/lib/axios.js` — it already attaches the JWT and handles 401s.
