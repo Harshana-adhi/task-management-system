@@ -1,30 +1,83 @@
-# TaskFlow — Frontend
+# Task Management System — Frontend
 
-React (Vite) + Tailwind CSS frontend for the Task Management System.
+React single-page application for the Task Management System (INTE 21323 Group Project). Provides login, role-based dashboards, project/task management with drag-and-drop status updates, comments, attachments, and real-time notifications.
 
-> Full project documentation (setup, scripts, screenshots, contributions) is completed in Phase 9. This is a minimal note so the team can run what's built so far.
+## Tech Stack
 
-## Setup
+- **Framework:** React 19 + Vite
+- **Routing:** React Router v7
+- **State:** Zustand
+- **Forms & validation:** React Hook Form + Zod
+- **Styling:** Tailwind CSS v4
+- **Drag & drop:** dnd-kit (used for the task board, e.g. To Do → In Progress → Completed)
+- **Real-time:** Socket.io client
+- **HTTP:** Axios
+- **Notifications/toasts:** Sonner
 
-```bash
-cd frontend
-npm install
-cp .env.example .env   # adjust VITE_API_URL / VITE_SOCKET_URL if needed
-npm run dev
-```
+## Setup Instructions
 
-## Scripts
+1. Move into the frontend folder:
+   ```bash
+   cd task-management-system/frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Copy the example environment file and fill in real values:
+   ```bash
+   cp .env.example .env
+   ```
+4. Run the dev server:
+   ```bash
+   npm run dev
+   ```
+5. Build for production:
+   ```bash
+   npm run build
+   ```
+6. Preview the production build locally:
+   ```bash
+   npm run preview
+   ```
 
-- `npm run dev` — start the dev server
-- `npm run build` — production build
-- `npm run preview` — preview the production build locally
-- `npm run lint` — run ESLint
+## Environment Variables
 
-## Design system (Phase 1)
+| Variable | Description |
+|---|---|
+| `VITE_API_URL` | Base URL of the backend REST API (e.g. `https://your-backend.onrender.com/api`) |
+| `VITE_SOCKET_URL` | Base URL of the backend Socket.io server |
 
-- Tailwind v4, configured in `src/index.css` via `@theme` (brand color scale, status/priority color tokens, fonts).
-- Class-based dark mode — toggle lives in the navbar, state in `src/store/useThemeStore.js`.
-- Shared building blocks in `src/components/common/` (Button, Input, Modal, Loader, Table, Badge, Toast). Build new UI out of these rather than one-off styles.
-- `StatusBadge` / `PriorityBadge` in `Badge.jsx` are the single source of truth for status/priority colors — reuse them everywhere a status or priority is shown (table, Kanban, task detail).
-- Global state: Zustand stores in `src/store/` (`useAuthStore`, `useThemeStore`, `useNotificationStore`, `useUIStore`).
-- API calls: import the shared `api` instance from `src/lib/axios.js` — it already attaches the JWT and handles 401s.
+## Available Scripts
+
+| Script | Description |
+|---|---|
+| `npm run dev` | Start Vite dev server |
+| `npm run build` | Production build |
+| `npm run lint` | Run ESLint |
+| `npm run preview` | Preview the production build locally |
+
+## Screenshots
+
+> Add screenshots to `frontend/public/screenshots/` and reference them below.
+
+**Light mode**
+
+![Dashboard - light](public/screenshots/dashboard-light.png)
+
+**Dark mode**
+
+![Dashboard - dark](public/screenshots/dashboard-dark.png)
+
+## Deployment
+
+- Hosted on **Cloudflare** (via `wrangler.toml`), with a custom domain configured.
+- Live demo: `<your-cloudflare-url>`
+
+## Team Contributions
+
+| Name | Module / Feature |
+|---|---|
+| _Add team member_ | _e.g. Auth pages, Task board UI_ |
+| _Add team member_ | _e.g. Project management views_ |
+| _Add team member_ | _e.g. Notifications, real-time integration_ |
