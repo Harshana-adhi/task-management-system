@@ -10,6 +10,7 @@ import ProjectDetail from './pages/Projects/ProjectDetail'
 import MyTasks from './pages/Tasks/MyTasks'
 import Users from './pages/Admin/Users/Users'
 import NotFound from './pages/NotFound/NotFound'
+import AccessDenied from './pages/AccessDenied/AccessDenied'
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:projectId" element={<ProjectDetail />} />
             <Route path="/tasks" element={<MyTasks />} />
+            <Route path="/access-denied" element={<AccessDenied />} />
 
             <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
               <Route path="/admin/users" element={<Users />} />
