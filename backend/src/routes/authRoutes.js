@@ -4,9 +4,10 @@ const { login, changeUserPassword, getProfile } = require('../controllers/authCo
 const { authenticate } = require('../middlewares/authMiddleware');
 const { validate } = require('../middlewares/validationMiddleware');
 const { loginSchema, changePasswordSchema } = require('../validators/authValidator');
+const { loginLimiter } = require('../middlewares/rateLimitMiddleware');
 
 // POST /api/auth/login
-router.post('/login', validate(loginSchema), login);
+router.post('/login', loginLimiter, validate(loginSchema), login);
 
 // PUT /api/auth/change-password
 router.put('/change-password', authenticate, validate(changePasswordSchema), changeUserPassword);
