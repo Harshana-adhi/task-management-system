@@ -26,7 +26,6 @@ The system supports:
 ```
 
 ## Tech Stack
-
 | Layer | Technology |
 |---|---|
 | Frontend | React, Vite, Tailwind CSS, Zustand, React Router |
@@ -36,6 +35,7 @@ The system supports:
 | Auth | JWT, bcrypt |
 | Frontend hosting | Cloudflare |
 | Backend hosting | Render |
+| Containerization | Docker (frontend + backend, deployed as separate demo services on Render) |
 | CI | GitHub Actions |
 
 ## Project Structure
@@ -50,9 +50,15 @@ task-management-system/
 
 ## Live Demo
 
-- **Frontend:** `<your-cloudflare-url>`
-- **Backend API:** `<your-render-url>`
-- **API Docs (Swagger):** `<your-render-url>/api-docs`
+**Node deployment (primary):**
+- **Frontend:** https://taskify.task-management-system.best/login
+- **Backend API:** https://task-management-system-backend-spcl.onrender.com
+- **API Docs (Swagger):** https://task-management-system-backend-spcl.onrender.com/api-docs
+
+**Docker deployment (containerized demo):**
+- **Frontend:** https://taskifyd.task-management-system.best
+- **Backend API:** https://task-management-system-6936.onrender.com
+- **API Docs (Swagger):** https://task-management-system-6936.onrender.com/api-docs
 
 ## Documentation
 
@@ -73,7 +79,8 @@ See `/database/schemas` for the full PostgreSQL schema (roles, users, projects, 
 
 | Name | Contribution |
 |---|---|
-| _Add team member_ | _e.g. Backend — Auth, Projects_ |
-| _Add team member_ | _e.g. Backend — Tasks, Notifications_ |
-| _Add team member_ | _e.g. Frontend — UI, real-time integration_ |
-| _Add team member_ | _e.g. Database design, DevOps/CI_ |
+| Harshana | Core setup & DB connection, Authentication (login, JWT, auth middleware, change password, profile), Documentation (Swagger/OpenAPI, README, API usage guide), Deployment (Docker, CI/CD, cloud hosting) — Backend & Frontend |
+| Kavinda | Project Management (create/view/update projects, member management), Real-Time Notifications (Socket.io — task/status/comment/deadline/admin notifications, offline storage & reconnection) — Backend & Frontend |
+| Baary | Task Management (create/view/update/delete tasks, Kanban board, assignment, filtering & sorting, priority & deadlines, Collaborator task views) — Backend & Frontend |
+| Ragu | Comments & Attachments (add/view comments, upload/view attachments) — Backend & Frontend |
+| Geethma | Security & Validation (input validation, error handling, SQL injection prevention, CORS, HTTPS, XSS prevention, OWASP compliance, password hashing) — Backend & Frontend |
