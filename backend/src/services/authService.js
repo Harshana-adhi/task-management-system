@@ -9,12 +9,19 @@ const loginUser = async (email, password) => {
 
     const user = await findUserByEmail(email);
 
-    const isValidPassword = user 
-        ? await bcrypt.compare(password, user.password_hash) 
+    const isValidPassword = user
+        ? await bcrypt.compare(password, user.password_hash)
         : false;
 
-    if (!user || !isValidPassword || !user.is_active) {
+    if (!user || !isValidPassword) {
         throw new Error('Invalid email or password');
+    }
+
+    // Checked only after credentials are confirmed valid — otherwise this
+    // would leak whether a given email exists in the system to anyone
+    // who tries it, regardless of password.
+    if (!user.is_active) {
+        throw new Error('ACCOUNT_DEACTIVATED');
     }
 
     const token = jwt.sign(
