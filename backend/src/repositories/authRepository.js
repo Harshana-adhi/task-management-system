@@ -40,4 +40,22 @@ const updatePassword = async (userId, passwordHash) => {
     return result.rows[0];
 };
 
-module.exports = { findUserByEmail, findUserById, findUserByIdWithPassword, updatePassword };
+// Used by the forgot-password flow specifically — unlike updatePassword
+// (a deliberate, user-initiated change, which clears the "must change"
+// flag), this sets must_change_password back to TRUE, since the temporary
+// password emailed to the user should be replaced with one only they
+// know, the same way a freshly created account works.
+const setTemporaryPassword = async (userId, passwordHash) => {
+    const result = await pool.query(
+        `UPDATE users 
+         SET password_hash = $1, 
+             must_change_password = TRUE,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE user_id = $2
+         RETURNING user_id, full_name, email, role_id, must_change_password`,
+        [passwordHash, userId]
+    );
+    return result.rows[0];
+};
+
+module.exports = { findUserByEmail, findUserById, findUserByIdWithPassword, updatePassword, setTemporaryPassword };

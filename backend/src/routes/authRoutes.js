@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { login, changeUserPassword, getProfile } = require('../controllers/authController');
+const { login, changeUserPassword, getProfile, requestPasswordReset } = require('../controllers/authController');
 const { authenticate } = require('../middlewares/authMiddleware');
 const { validate } = require('../middlewares/validationMiddleware');
-const { loginSchema, changePasswordSchema } = require('../validators/authValidator');
-const { loginLimiter } = require('../middlewares/rateLimitMiddleware');
+const { loginSchema, changePasswordSchema, forgotPasswordSchema } = require('../validators/authValidator');
+const { loginLimiter, forgotPasswordLimiter } = require('../middlewares/rateLimitMiddleware');
 
 /**
  * @swagger
@@ -51,12 +51,60 @@ const { loginLimiter } = require('../middlewares/rateLimitMiddleware');
  *         content:
  *           application/json:
  *             schema: { $ref: '#/components/schemas/ErrorResponse' }
+ *       403:
+ *         description: Account has been deactivated
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/ErrorResponse' }
+ *             example: { error: Account Deactivated, message: "This account has been deactivated. Please contact an administrator." }
  *       429:
  *         description: Too many login attempts (rate limited)
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
 router.post('/login', loginLimiter, validate(loginSchema), login);
+
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Request a temporary password be emailed to an account
+ *     description: >
+ *       Always returns the same generic message regardless of whether the
+ *       email matches an active account — this is intentional, to avoid
+ *       letting the endpoint be used to discover which emails are
+ *       registered. If a match is found, a new temporary password is
+ *       generated, stored, and emailed; the account's must-change-password
+ *       flag is set so the person is forced to set their own password
+ *       right after logging in with it.
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string, format: email, example: user@example.com }
+ *     responses:
+ *       200:
+ *         description: Generic confirmation (sent regardless of whether the email matched an account)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string, example: If an account exists for that email, a temporary password has been sent. }
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       429:
+ *         description: Too many reset requests (rate limited)
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
+router.post('/forgot-password', forgotPasswordLimiter, validate(forgotPasswordSchema), requestPasswordReset);
 
 /**
  * @swagger
