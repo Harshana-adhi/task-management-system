@@ -83,7 +83,7 @@ See `/database/schemas` for the full PostgreSQL schema (roles, users, projects, 
 
 | Name | Contribution |
 |---|---|
-| Harshana | Core setup & DB connection, Authentication (login, JWT, auth middleware, change password, profile), Documentation (Swagger/OpenAPI, README, API usage guide), Deployment (Docker, CI/CD, cloud hosting) — Backend & Frontend |
+| Harshana | Core setup & DB connection, Authentication (login, JWT, auth middleware, change password, profile),User Management (admin only) Documentation (Swagger/OpenAPI, README, API usage guide), Deployment (Docker, CI/CD, cloud hosting) — Backend & Frontend |
 | Kavinda | Project Management (create/view/update projects, member management), Real-Time Notifications (Socket.io — task/status/comment/deadline/admin notifications, offline storage & reconnection) — Backend & Frontend |
 | Baary | Task Management (create/view/update/delete tasks, Kanban board, assignment, filtering & sorting, priority & deadlines, Collaborator task views) — Backend & Frontend |
 | Ragu | Comments & Attachments (add/view comments, upload/view attachments) — Backend & Frontend |
