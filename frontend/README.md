@@ -60,7 +60,7 @@ React single-page application for the Task Management System (INTE 21323 Group P
 
 ## Deployment
 
-- Hosted on **Cloudflare** (via `wrangler.toml`), with a custom domain configured.
-- Live demo (Node backend): https://taskify.task-management-system.best/login
-- Live demo (Docker backend): https://taskifyd.task-management-system.best
+- Hosted on **Cloudflare** (Node build, via `wrangler.toml`, with a custom domain) and on **Render** (Docker build, via Dockerfile, with a custom domain).
+- Live demo (Frontend, Node build, hosted on Cloudflare): https://taskify.task-management-system.best
+- Live demo (Frontend, Docker build, hosted on Render): https://taskifyd.task-management-system.best
 
