@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { findUserByEmail, findUserById, findUserByIdWithPassword, updatePassword } = require('../repositories/authRepository');
+const { findUserByEmail, findUserById, findUserByIdWithPassword, updatePassword, setTemporaryPassword } = require('../repositories/authRepository');
+const { sendPasswordResetEmail } = require('../utils/emailService');
 
 const loginUser = async (email, password) => {
     if (!process.env.JWT_SECRET) {
@@ -80,4 +81,33 @@ const changePassword = async (userId, currentPassword, newPassword) => {
     return updatedUser;
 };
 
-module.exports = { loginUser, getUserById, changePassword };
+// Self-service password reset. Deliberately always resolves the same way
+// to the caller (controller returns one generic message regardless of
+// outcome) — this function is where the actual "does this email exist /
+// is it active" branching happens, so the controller never has to leak
+// that distinction in its response.
+//
+// On a match: generates a fresh temporary password (same format used
+// when an Admin creates a user), hashes it, stores it, sets
+// must_change_password = TRUE so the person is forced to set their own
+// password right after logging in, then emails it via Resend.
+const forgotPassword = async (email) => {
+    const user = await findUserByEmail(email);
+
+    if (!user || !user.is_active) {
+        // Deliberately not thrown as an error — the controller treats this
+        // identically to the success path so a bad actor can't use this
+        // endpoint to discover which emails are registered or active.
+        return { sent: false };
+    }
+
+    const temporaryPassword = Math.random().toString(36).slice(-8) + 'A1!';
+    const passwordHash = await bcrypt.hash(temporaryPassword, 10);
+
+    await setTemporaryPassword(user.user_id, passwordHash);
+    await sendPasswordResetEmail(user.email, user.full_name, temporaryPassword);
+
+    return { sent: true };
+};
+
+module.exports = { loginUser, getUserById, changePassword, forgotPassword };
