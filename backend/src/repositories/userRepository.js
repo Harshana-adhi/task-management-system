@@ -154,6 +154,18 @@ const getUserLookup = async (search, roleName) => {
     return result.rows;
 };
 
+// Used when notifying other Admins of account-wide events (e.g. a new
+// project being created) — returns just the IDs, not full user rows,
+// since that's all sendNotification needs per recipient.
+const getActiveAdminIds = async () => {
+    const result = await pool.query(
+        `SELECT u.user_id FROM users u
+         JOIN roles r ON u.role_id = r.role_id
+         WHERE r.role_name = 'Admin' AND u.is_active = TRUE`
+    );
+    return result.rows.map((row) => row.user_id);
+};
+
 module.exports = {
     createUser,
     getAllUsers,
@@ -163,5 +175,6 @@ module.exports = {
     deactivateUser,
     activateUser,
     getAllRoles,
-    getUserLookup
+    getUserLookup,
+    getActiveAdminIds
 };

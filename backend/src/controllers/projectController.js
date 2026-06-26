@@ -1,4 +1,5 @@
 const projectService = require('../services/projectService');
+const userRepository = require('../repositories/userRepository');
 const { sendNotification } = require('../sockets/notificationSocket');
 
 const createProject = async (req, res) => {
@@ -14,6 +15,22 @@ const createProject = async (req, res) => {
         }
 
         const project = await projectService.createProject(projectName, description, createdBy);
+
+        // Notify other Admins for visibility — not the creator themselves,
+        // and not yet any PM/members, since none are assigned at creation
+        // time (that happens via separate assign-manager / add-member
+        // actions, which already send their own notifications).
+        if (req.user.role_name === 'Admin') {
+            const adminIds = await userRepository.getActiveAdminIds();
+            for (const adminId of adminIds) {
+                if (adminId === createdBy) continue;
+                sendNotification({
+                    userId: adminId,
+                    title: 'New Project Created',
+                    message: `${req.user.full_name} created a new project: "${project.project_name}".`
+                });
+            }
+        }
 
         return res.status(201).json({
             message: 'Project created successfully',
@@ -114,6 +131,13 @@ const addMember = async (req, res) => {
 
         const member = await projectService.addMember(projectId, userId, requesterId, userRole);
 
+        const project = await projectService.getProjectById(projectId, requesterId, userRole);
+        sendNotification({
+            userId,
+            title: 'Added to Project',
+            message: `${req.user.full_name} added you to the project "${project.project_name}".`
+        });
+
         return res.status(201).json({
             message: 'Member added successfully',
             member
@@ -141,7 +165,19 @@ const removeMember = async (req, res) => {
         const requesterId = req.user.user_id;
         const userRole = req.user.role_name;
 
+        // Fetched before removal so the project name is still resolvable
+        // via the normal access check (irrelevant in practice since the
+        // requester is the manager removing someone else, not themselves,
+        // but kept this order for clarity).
+        const project = await projectService.getProjectById(projectId, requesterId, userRole);
+
         await projectService.removeMember(projectId, userId, requesterId, userRole);
+
+        sendNotification({
+            userId,
+            title: 'Removed from Project',
+            message: `${req.user.full_name} removed you from the project "${project.project_name}".`
+        });
 
         return res.status(200).json({
             message: 'Member removed successfully'
