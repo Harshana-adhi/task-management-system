@@ -77,29 +77,24 @@ See `.env.example` for the full list. Required:
 | `SUPABASE_BUCKET` | Storage bucket name for attachments |
 
 ## API Documentation
-
 Full interactive API documentation is available via Swagger UI:
-
 - **Local:** `http://localhost:5000/api-docs`
-- **Live:** `<your-render-url>/api-docs`
+- **Live (Node):** https://task-management-system-backend-spcl.onrender.com/api-docs
+- **Live (Docker):** https://task-management-system-6936.onrender.com/api-docs
 
 Every endpoint (auth, users, projects, tasks, comments, attachments, notifications) is documented with request bodies, parameters, and response codes (400/401/403/404/409/500) directly from the route files.
 
 ## Running with Docker
-
 ```bash
 docker build -t tms-backend .
 docker run -p 5000:5000 --env-file .env tms-backend
 ```
 
 ## Running Tests / CI
-
 A GitHub Actions workflow (`.github/workflows/backend-ci.yml`) runs install + test + Docker build on every push/PR touching `backend/`. Note: the current `npm test` script is a placeholder — replace it with a real test command once a test suite is added, since CI will otherwise report it as a known gap.
 
 ## Deployment
-
-- Hosted on **Render**, with auto-deploy on push to `develop`.
+- Hosted on **Render** (Node build, with auto-deploy on push to `develop`) and on **Render** (Docker build, deployed from the same Dockerfile used locally).
 - CORS is locked to `FRONTEND_URL` in production.
-- Live demo: `https://task-management-system-backend-spcl.onrender.com`
-
-
+- Live demo (Node): https://task-management-system-backend-spcl.onrender.com
+- Live demo (Docker): https://task-management-system-6936.onrender.com
