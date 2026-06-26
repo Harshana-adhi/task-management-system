@@ -25,6 +25,10 @@ The system supports:
                                            (task attachments)
 ```
 
+## Deployment Architecture
+
+![Deployment Diagram](docs/deployment-diagram.svg)
+
 ## Tech Stack
 
 | Layer | Technology |
