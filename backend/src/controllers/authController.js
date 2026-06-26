@@ -1,4 +1,4 @@
-const { loginUser, changePassword, getUserById } = require('../services/authService');
+const { loginUser, changePassword, getUserById, forgotPassword } = require('../services/authService');
 
 const login = async (req, res) => {
     try {
@@ -105,4 +105,25 @@ const getProfile = async (req, res) => {
     }
 };
 
-module.exports = { login, changeUserPassword, getProfile };
+// Always returns the same generic message regardless of whether the email
+// matched an active account — see authService.forgotPassword for where the
+// actual existence/active check happens. This prevents the endpoint from
+// being used to enumerate registered emails.
+const requestPasswordReset = async (req, res) => {
+    try {
+        const { email } = req.body;
+        await forgotPassword(email);
+
+        return res.status(200).json({
+            message: 'If an account exists for that email, a temporary password has been sent.'
+        });
+
+    } catch (error) {
+        console.error('forgotPassword error:', error);
+        return res.status(200).json({
+            message: 'If an account exists for that email, a temporary password has been sent.'
+        });
+    }
+};
+
+module.exports = { login, changeUserPassword, getProfile, requestPasswordReset };

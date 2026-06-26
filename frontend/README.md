@@ -57,27 +57,10 @@ React single-page application for the Task Management System (INTE 21323 Group P
 | `npm run lint` | Run ESLint |
 | `npm run preview` | Preview the production build locally |
 
-## Screenshots
-
-> Add screenshots to `frontend/public/screenshots/` and reference them below.
-
-**Light mode**
-
-![Dashboard - light](public/screenshots/dashboard-light.png)
-
-**Dark mode**
-
-![Dashboard - dark](public/screenshots/dashboard-dark.png)
 
 ## Deployment
 
-- Hosted on **Cloudflare** (via `wrangler.toml`), with a custom domain configured.
-- Live demo: `<your-cloudflare-url>`
+- Hosted on **Cloudflare** (Node build, via `wrangler.toml`, with a custom domain) and on **Render** (Docker build, via Dockerfile, with a custom domain).
+- Live demo (Frontend, Node build, hosted on Cloudflare): https://taskify.task-management-system.best
+- Live demo (Frontend, Docker build, hosted on Render): https://taskifyd.task-management-system.best
 
-## Team Contributions
-
-| Name | Module / Feature |
-|---|---|
-| _Add team member_ | _e.g. Auth pages, Task board UI_ |
-| _Add team member_ | _e.g. Project management views_ |
-| _Add team member_ | _e.g. Notifications, real-time integration_ |

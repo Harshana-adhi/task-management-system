@@ -10,6 +10,11 @@ export async function login(email, password) {
   return data // { message, token, mustChangePassword, user: { userId, fullName, email, roleId } }
 }
 
+export async function forgotPassword(email) {
+  const { data } = await api.post('/auth/forgot-password', { email })
+  return data // { message } — always generic, regardless of whether the email matched an account
+}
+
 export async function changePassword(currentPassword, newPassword) {
   const { data } = await api.put('/auth/change-password', { currentPassword, newPassword })
   return data // { message, user: { user_id, full_name, email, role_id, must_change_password } }

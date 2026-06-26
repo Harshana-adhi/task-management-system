@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import AppLayout from './components/layouts/AppLayout'
 import ProtectedRoute from './routes/ProtectedRoute'
 import Login from './pages/Login/Login'
+import ForgotPassword from './pages/ForgotPassword/ForgotPassword'
 import ChangePassword from './pages/ChangePassword/ChangePassword'
 import Profile from './pages/Profile/Profile'
 import Dashboard from './pages/Dashboard/Dashboard'
@@ -17,6 +18,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         <Route element={<ProtectedRoute />}>
           {/* Standalone, full-screen — rendered outside the app shell,
