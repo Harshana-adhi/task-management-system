@@ -23,11 +23,19 @@ const login = async (req, res) => {
     } catch (error) {
         const isAuthFailure = error.message === 'Invalid email or password';
         const isConfigError = error.message === 'AUTH_CONFIG_ERROR';
+        const isDeactivated = error.message === 'ACCOUNT_DEACTIVATED';
 
         if (isConfigError) {
             return res.status(500).json({
                 error: 'Internal Server Error',
                 message: 'Authentication service is not configured'
+            });
+        }
+
+        if (isDeactivated) {
+            return res.status(403).json({
+                error: 'Account Deactivated',
+                message: 'This account has been deactivated. Please contact an administrator.'
             });
         }
 
