@@ -66,7 +66,10 @@ export async function activateUser(userId) {
 export async function lookupUsers({ search, roleName } = {}) {
   const params = {}
   if (search) params.search = search
-  if (roleName) params.role_name = roleName
+  // roleName can be a single role string or an array of roles (e.g.
+  // ['Project Manager', 'Collaborator']) — joined into the comma-separated
+  // format the backend's getUserLookup controller expects.
+  if (roleName) params.role_name = Array.isArray(roleName) ? roleName.join(',') : roleName
 
   const { data } = await api.get('/users/lookup', { params })
   return data

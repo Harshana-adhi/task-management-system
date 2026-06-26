@@ -276,7 +276,7 @@ router.patch('/:projectId/unarchive', authenticate, authorize('Admin', 'Project 
  * @swagger
  * /api/projects/{projectId}/manager:
  *   patch:
- *     summary: Assign a Project Manager to co-manage this project (Admin only)
+ *     summary: Assign a Project Manager to manage this project (Admin only) — supersedes whoever currently manages it, including the original creator
  *     tags: [Projects]
  *     parameters:
  *       - in: path
@@ -304,11 +304,11 @@ router.patch('/:projectId/unarchive', authenticate, authorize('Admin', 'Project 
  *       404:
  *         description: Project or user not found
  *       409:
- *         description: Already the assigned manager, or project already has one
+ *         description: User is already the assigned manager for this project
  *       500:
  *         $ref: '#/components/responses/ServerError'
  *   delete:
- *     summary: Unassign the current manager from a project (Admin only)
+ *     summary: Unassign whoever currently manages a project (Admin only) — including the original PM creator, if applicable
  *     tags: [Projects]
  *     parameters:
  *       - in: path
@@ -325,7 +325,7 @@ router.patch('/:projectId/unarchive', authenticate, authorize('Admin', 'Project 
  *       404:
  *         $ref: '#/components/responses/NotFound'
  *       409:
- *         description: This project has no assigned manager
+ *         description: This project has no manager to unassign
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */

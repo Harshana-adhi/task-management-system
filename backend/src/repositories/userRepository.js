@@ -120,6 +120,11 @@ const getAllRoles = async () => {
     return result.rows;
 };
 
+// roleName accepts either a single role string (existing behavior, e.g.
+// 'Collaborator' when a PM is adding members) or an array of roles (e.g.
+// ['Project Manager', 'Collaborator'] when an Admin is adding members —
+// any active non-Admin user is a valid project member, but Admins
+// themselves aren't, since Admin isn't a project-membership role).
 const getUserLookup = async (search, roleName) => {
     let query = `
         SELECT u.user_id, u.full_name, u.email, r.role_name
@@ -137,8 +142,9 @@ const getUserLookup = async (search, roleName) => {
     }
 
     if (roleName) {
-        query += ` AND r.role_name = $${index}`;
-        values.push(roleName);
+        const roleNames = Array.isArray(roleName) ? roleName : [roleName];
+        query += ` AND r.role_name = ANY($${index}::text[])`;
+        values.push(roleNames);
         index++;
     }
 

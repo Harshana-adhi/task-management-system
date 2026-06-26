@@ -24,6 +24,7 @@ const PROJECT_LIST_SELECT = `
     p.project_name,
     p.description,
     p.is_archived,
+    p.owner_revoked,
     p.created_at,
     p.updated_at,
     p.created_by,
@@ -260,10 +261,13 @@ const setArchived = async (projectId, isArchived) => {
 // Sets the single assigned manager for a project. Overwrites any
 // previous value — the column structurally allows only one at a time,
 // which is what enforces "only one assigned Project Manager" per project.
+// Also marks owner_revoked = true: assigning a manager always supersedes
+// the original creator's automatic rights (relevant when the project was
+// created by a PM — Admin can now hand it to someone else entirely).
 const setAssignedManager = async (projectId, userId) => {
     const result = await pool.query(
         `UPDATE projects
-         SET assigned_manager_id = $1, updated_at = CURRENT_TIMESTAMP
+         SET assigned_manager_id = $1, owner_revoked = TRUE, updated_at = CURRENT_TIMESTAMP
          WHERE project_id = $2
          RETURNING *`,
         [userId, projectId]
@@ -271,10 +275,15 @@ const setAssignedManager = async (projectId, userId) => {
     return result.rows[0];
 };
 
+// Clears the assigned manager. owner_revoked is always set TRUE here too —
+// once an Admin explicitly unassigns a project's manager (whether that was
+// a co-manager or the original PM creator), the project is left with no
+// manager until the Admin assigns a new one. It does NOT silently revert
+// to the original creator.
 const removeAssignedManager = async (projectId) => {
     const result = await pool.query(
         `UPDATE projects
-         SET assigned_manager_id = NULL, updated_at = CURRENT_TIMESTAMP
+         SET assigned_manager_id = NULL, owner_revoked = TRUE, updated_at = CURRENT_TIMESTAMP
          WHERE project_id = $1
          RETURNING *`,
         [projectId]

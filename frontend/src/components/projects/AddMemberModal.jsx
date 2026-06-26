@@ -17,10 +17,14 @@ function initials(name = '') {
  * Project Manager). Already-added members are filtered out via
  * `existingMemberIds` so the same person can't be offered twice.
  *
- * `roleFilter` restricts results to a single role server-side (used to
- * limit Project Managers to Collaborators only — see ProjectDetail.jsx).
- * The backend re-enforces this independently in projectService.addMember,
- * so this filter is for UX, not the actual security boundary.
+ * `roleFilter` restricts results server-side — pass a single role string
+ * (e.g. 'Project Manager', used for the manager-assignment modal) or an
+ * array of roles (e.g. ['Project Manager', 'Collaborator'], used for
+ * Admin's "add member" picker — any non-Admin active user is eligible,
+ * since a PM can also be a regular member of someone else's project).
+ * The backend re-enforces the actual permission rule independently in
+ * projectService.addMember, so this filter is for UX, not the security
+ * boundary itself.
  */
 export default function AddMemberModal({
   open,
@@ -32,6 +36,13 @@ export default function AddMemberModal({
   actionLabel = 'Add',
   helperText,
 }) {
+  const roleFilterList = Array.isArray(roleFilter) ? roleFilter : roleFilter ? [roleFilter] : []
+  const roleFilterLabel = roleFilterList.length === 1
+    ? `${roleFilterList[0]}s`
+    : roleFilterList.length > 1
+      ? roleFilterList.join('s or ') + 's'
+      : null
+
   const [search, setSearch] = useState('')
   const [results, setResults] = useState(null) // null = not searched yet
   const [isSearching, setIsSearching] = useState(false)
@@ -77,15 +88,15 @@ export default function AddMemberModal({
       <div className="flex flex-col gap-4">
         <Input
           icon={Search}
-          placeholder={roleFilter ? `Search ${roleFilter.toLowerCase()}s by name or email…` : 'Search by name or email…'}
+          placeholder={roleFilterLabel ? `Search ${roleFilterLabel.toLowerCase()} by name or email…` : 'Search by name or email…'}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           autoFocus
         />
 
-        {roleFilter && (
+        {roleFilterLabel && (
           <p className="-mt-2 text-xs text-slate-400">
-            {helperText ?? `Showing ${roleFilter}s only.`}
+            {helperText ?? `Showing ${roleFilterLabel} only.`}
           </p>
         )}
 

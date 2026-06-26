@@ -15,13 +15,15 @@ const getProjectById = async (projectId, userId, userRole) => {
     return project;
 };
 
-// A Project Manager can manage a project if they created it OR were
-// assigned to it by an Admin (see assignManager below) — both grant the
-// same rights. Admin can always manage any project.
+// A Project Manager can act on a project if:
+//   - they are the assigned_manager (always takes precedence), OR
+//   - they created it AND their owner rights haven't been revoked by an Admin
+// Admin can always manage any project.
 const canManageProject = (project, requesterId, userRole) => {
     if (userRole === 'Admin') return true;
     if (userRole !== 'Project Manager') return false;
-    return project.created_by === requesterId || project.assigned_manager_id === requesterId;
+    if (project.assigned_manager_id === requesterId) return true;
+    return project.created_by === requesterId && !project.owner_revoked;
 };
 
 const updateProject = async (projectId, projectName, description, userId, userRole) => {
@@ -44,16 +46,34 @@ const addMember = async (projectId, userId, requesterId, userRole) => {
         throw new Error('You can only manage members of projects you created or are assigned to manage');
     }
 
-    // Project Managers can only add Collaborators to a project — Admins,
-    // other Project Managers, etc. are added/managed at the user-account
-    // level (Phase 3), not as project members. Admin is exempt from this
-    // restriction (full access).
-    if (userRole === 'Project Manager') {
-        const targetUser = await userRepository.getUserById(userId);
-        if (!targetUser) throw new Error('User not found or inactive');
-        if (targetUser.role_name !== 'Collaborator') {
-            throw new Error('Project Managers can only add Collaborators to a project');
-        }
+    const targetUser = await userRepository.getUserById(userId);
+    if (!targetUser) throw new Error('User not found or inactive');
+
+    // Admin accounts are never project members — Admin oversight works at
+    // the account level (full visibility into every project already),
+    // not via project_members rows. This applies regardless of who's
+    // adding, so it's checked before the PM-specific rule below.
+    if (targetUser.role_name === 'Admin') {
+        throw new Error('Admin accounts cannot be added as project members');
+    }
+
+    // The project's effective manager (assigned, or the original PM
+    // creator if their rights haven't been revoked) already has full
+    // management rights over the project — adding them as a regular
+    // member too is redundant and not allowed.
+    const isEffectiveManager = project.assigned_manager_id === userId
+        || (project.created_by === userId && project.created_by_role === 'Project Manager' && !project.owner_revoked);
+    if (isEffectiveManager) {
+        throw new Error('This user already manages the project and cannot also be added as a member');
+    }
+
+    // Project Managers can only add Collaborators to a project — other
+    // Project Managers are added/managed at the user-account level
+    // (Phase 3), not as project members here. Admin is exempt from this
+    // specific restriction and can add either a PM or a Collaborator —
+    // a PM can be a regular member of a project they don't manage.
+    if (userRole === 'Project Manager' && targetUser.role_name !== 'Collaborator') {
+        throw new Error('Project Managers can only add Collaborators to a project');
     }
 
     return await projectRepository.addMember(projectId, userId);
@@ -117,10 +137,13 @@ const deleteProject = async (projectId, userRole) => {
     return await projectRepository.deleteProject(projectId);
 };
 
-// Assign one Project Manager to "co-manage" a project — Admin only.
+// Assign one Project Manager to manage a project — Admin only.
 // Overwrites any previously assigned manager (a project can only have
-// one at a time). The target user must actually hold the Project
-// Manager role.
+// one at a time), and supersedes the original creator's rights too —
+// this covers the practical scenario where an Admin needs to hand a
+// PM-created project to a different Project Manager entirely (e.g. the
+// original PM left the team). The target user must actually hold the
+// Project Manager role.
 const assignManager = async (projectId, userId, requesterRole) => {
     if (requesterRole !== 'Admin') {
         throw new Error('Only an Administrator can assign a project manager');
@@ -128,13 +151,6 @@ const assignManager = async (projectId, userId, requesterRole) => {
 
     const project = await projectRepository.getProjectByIdInternal(projectId);
     if (!project) throw new Error('Project not found');
-
-    // A project created by a Project Manager already has its leader —
-    // no co-manager is needed. Assigning a manager only makes sense for
-    // projects created by an Admin, which otherwise have no PM at all.
-    if (project.created_by_role === 'Project Manager') {
-        throw new Error('This project was created by a Project Manager and already has a manager — no co-manager is needed');
-    }
 
     const targetUser = await userRepository.getUserById(userId);
     if (!targetUser) throw new Error('User not found');
@@ -148,6 +164,11 @@ const assignManager = async (projectId, userId, requesterRole) => {
     return await projectRepository.setAssignedManager(projectId, userId);
 };
 
+// Unassigns whoever currently manages this project — whether that's a
+// previously assigned co-manager, OR the original creator (if they're a
+// PM with active rights). Either way, the project is left with no
+// manager until the Admin assigns a new one (see setAssignedManager /
+// removeAssignedManager — both set owner_revoked = true).
 const unassignManager = async (projectId, requesterRole) => {
     if (requesterRole !== 'Admin') {
         throw new Error('Only an Administrator can unassign a project manager');
@@ -155,9 +176,19 @@ const unassignManager = async (projectId, requesterRole) => {
 
     const project = await projectRepository.getProjectByIdInternal(projectId);
     if (!project) throw new Error('Project not found');
-    if (!project.assigned_manager_id) throw new Error('This project has no assigned manager');
 
-    return await projectRepository.removeAssignedManager(projectId);
+    const hasAssignedManager = !!project.assigned_manager_id;
+    const ownerHasActiveRights = project.created_by_role === 'Project Manager' && !project.owner_revoked;
+
+    if (!hasAssignedManager && !ownerHasActiveRights) {
+        throw new Error('This project has no manager to unassign');
+    }
+
+    // Whoever effectively manages it right now — this is who gets notified.
+    const previousManagerId = project.assigned_manager_id || project.created_by;
+
+    const updatedProject = await projectRepository.removeAssignedManager(projectId);
+    return { project: updatedProject, previousManagerId };
 };
 
 module.exports = {

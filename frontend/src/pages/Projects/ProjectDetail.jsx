@@ -237,36 +237,44 @@ export default function ProjectDetail() {
             </span>
           </div>
 
-          {/* Only Admin-created projects can have a co-manager assigned —
-              a PM-created project already has its leader (the creator). */}
-          {project.created_by_role !== 'Project Manager' && (
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                <UserCog className="size-3.5" />
-                {project.assigned_manager_name
-                  ? `Assigned manager: ${project.assigned_manager_name}`
-                  : 'No manager assigned'}
-              </span>
-              {isAdmin && (
-                <>
-                  <button
-                    onClick={() => setIsAssignManagerOpen(true)}
-                    className="font-medium text-brand-600 hover:underline dark:text-brand-400"
-                  >
-                    {project.assigned_manager_name ? 'Change' : 'Assign'}
-                  </button>
-                  {project.assigned_manager_name && (
+          {/* Effective manager = assigned_manager if set, otherwise the
+              original creator (if they're a PM whose rights haven't been
+              revoked). Admin can now unassign either, and assign a
+              replacement even for PM-created projects — covers a PM
+              leaving the team and needing to be swapped out. */}
+          {(() => {
+            const ownerHasActiveRights = project.created_by_role === 'Project Manager' && !project.owner_revoked
+            const effectiveManagerName = project.assigned_manager_name
+              || (ownerHasActiveRights ? project.created_by_name : null)
+            const hasManager = !!effectiveManagerName
+
+            return (
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                  <UserCog className="size-3.5" />
+                  {hasManager ? `Managed by: ${effectiveManagerName}` : 'No manager assigned'}
+                </span>
+                {isAdmin && (
+                  <>
                     <button
-                      onClick={() => setIsUnassignConfirmOpen(true)}
-                      className="font-medium text-rose-600 hover:underline dark:text-rose-400"
+                      onClick={() => setIsAssignManagerOpen(true)}
+                      className="font-medium text-brand-600 hover:underline dark:text-brand-400"
                     >
-                      Unassign
+                      {hasManager ? 'Change' : 'Assign'}
                     </button>
-                  )}
-                </>
-              )}
-            </div>
-          )}
+                    {hasManager && (
+                      <button
+                        onClick={() => setIsUnassignConfirmOpen(true)}
+                        className="font-medium text-rose-600 hover:underline dark:text-rose-400"
+                      >
+                        Unassign
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            )
+          })()}
         </div>
         {canManage && (
           <div className="flex flex-wrap gap-2">
@@ -386,9 +394,21 @@ export default function ProjectDetail() {
         open={isAddMemberOpen}
         onClose={() => setIsAddMemberOpen(false)}
         onAdd={handleAddMember}
-        existingMemberIds={members.map((m) => m.user_id)}
-        roleFilter={roleName === 'Project Manager' ? 'Collaborator' : undefined}
-        helperText="Project Managers can only add Collaborators to a project."
+        existingMemberIds={[
+          ...members.map((m) => m.user_id),
+          // The project's effective manager (assigned, or the original PM
+          // creator if their rights haven't been revoked) already has full
+          // management rights — adding them as a regular member too is
+          // redundant and shouldn't be offered.
+          project.assigned_manager_id,
+          project.created_by_role === 'Project Manager' && !project.owner_revoked ? project.created_by : null,
+        ].filter(Boolean)}
+        roleFilter={roleName === 'Project Manager' ? 'Collaborator' : ['Project Manager', 'Collaborator']}
+        helperText={
+          roleName === 'Project Manager'
+            ? 'Project Managers can only add Collaborators to a project.'
+            : 'Admin accounts are not project members — choose a Project Manager or Collaborator. Note a Project Manager can also be added as a regular member of a project they don\u2019t manage.'
+        }
       />
 
       <ConfirmDialog
@@ -406,11 +426,14 @@ export default function ProjectDetail() {
         open={isAssignManagerOpen}
         onClose={() => setIsAssignManagerOpen(false)}
         onAdd={handleAssignManager}
-        existingMemberIds={project.assigned_manager_id ? [project.assigned_manager_id] : []}
+        existingMemberIds={[
+          project.assigned_manager_id,
+          project.created_by_role === 'Project Manager' && !project.owner_revoked ? project.created_by : null,
+        ].filter(Boolean)}
         roleFilter="Project Manager"
         title="Assign a project manager"
         actionLabel="Assign"
-        helperText="This grants full management rights over the project, same as the creator. Only one manager can be assigned at a time."
+        helperText="This grants full management rights over the project. Only one manager can be assigned at a time, and assigning a new one replaces whoever currently manages it — including the original creator, if applicable."
       />
 
       <ConfirmDialog
@@ -420,7 +443,7 @@ export default function ProjectDetail() {
         isLoading={isManagerActionLoading}
         title="Unassign manager"
         confirmLabel="Unassign"
-        description={`${project.assigned_manager_name} will lose management rights over this project. The original creator keeps their access.`}
+        description="This removes their management rights over the project entirely — including if they were the original creator. The project will have no manager until you assign a new one."
       />
 
       <DeleteProjectDialog

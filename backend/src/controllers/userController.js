@@ -1,4 +1,5 @@
 const userService = require('../services/userService');
+const { sendNotification } = require('../sockets/notificationSocket');
 
 const createUser = async (req, res) => {
     try {
@@ -92,6 +93,13 @@ const deactivateUser = async (req, res) => {
     try {
         const { userId } = req.params;
         const user = await userService.deactivateUser(userId);
+
+        sendNotification({
+            userId,
+            title: 'Account Deactivated',
+            message: `Your account was deactivated by ${req.user.full_name}. Contact an administrator if you believe this is a mistake.`
+        });
+
         return res.status(200).json({
             message: 'User deactivated successfully',
             user
@@ -112,6 +120,13 @@ const activateUser = async (req, res) => {
     try {
         const { userId } = req.params;
         const user = await userService.activateUser(userId);
+
+        sendNotification({
+            userId,
+            title: 'Account Reactivated',
+            message: `Your account was reactivated by ${req.user.full_name}. You can log in again.`
+        });
+
         return res.status(200).json({
             message: 'User activated successfully',
             user
@@ -141,6 +156,13 @@ const assignRole = async (req, res) => {
         }
 
         const user = await userService.assignRole(userId, role_id);
+
+        sendNotification({
+            userId,
+            title: 'Role Updated',
+            message: `${req.user.full_name} updated your account role. Refresh or log in again to see your new permissions.`
+        });
+
         return res.status(200).json({
             message: 'Role assigned successfully',
             user
@@ -171,7 +193,13 @@ const getAllRoles = async (req, res) => {
 const getUserLookup = async (req, res) => {
     try {
         const { search, role_name } = req.query;
-        const users = await userService.getUserLookup(search, role_name);
+        // role_name can be a single role ("Collaborator") or a
+        // comma-separated list ("Project Manager,Collaborator") — the
+        // latter is how Admin's "add member" picker excludes Admin users
+        // without excluding PMs (who can also be regular members of
+        // someone else's project).
+        const roleNames = role_name ? role_name.split(',').map((r) => r.trim()) : undefined;
+        const users = await userService.getUserLookup(search, roleNames);
         return res.status(200).json(users);
 
     } catch (error) {
